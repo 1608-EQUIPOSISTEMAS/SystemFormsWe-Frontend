@@ -1511,6 +1511,12 @@ input:focus, select:focus{ border-color:#93c5fd; box-shadow:0 0 0 4px rgba(59,13
   color: #111827;
   letter-spacing: .02em;
 }
+#app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-weight: normal;
+}
 
 .form-section-subtitle + .row {
   margin-top: 6px;
@@ -1740,4 +1746,13 @@ input:focus, select:focus{ border-color:#93c5fd; box-shadow:0 0 0 4px rgba(59,13
   cursor: pointer;
 }
 
+</style>
+
+<style>
+#app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-weight: normal;
+}
 </style>

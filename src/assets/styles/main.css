@@ -2,12 +2,6 @@
 body {
   background-color: rgba(249, 249, 249, 0.975)!important;
 }
-#app {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
-}
 
 a,
 .green {

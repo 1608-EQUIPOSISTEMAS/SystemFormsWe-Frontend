@@ -3,7 +3,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import restrict from '@/directives/restrict.js'
 import router from './router'     
-import pinia from './store'        
+import pinia from './stores'        
 
 // Bootstrap CSS + JS
 import 'bootstrap/dist/css/bootstrap.min.css'
