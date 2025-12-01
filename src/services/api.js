@@ -1,44 +1,50 @@
+// src/services/api.js
 import axios from 'axios'
-import { loader } from '@/utils/loader' // 👈 IMPORTAR
+import { loader } from '@/utils/loader'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:3000/',
-  timeout: 10000,
+  timeout: 90000,
   headers: { 'Content-Type': 'application/json' }
 })
 
+// Request interceptor
 api.interceptors.request.use((config) => {
+  // Agregar token de autenticación
   const token = localStorage.getItem('token')
-  if (token) config.headers.Authorization = `Bearer ${token}`
-
-  const uid = 1
-  if (uid) {
-    const method = (config.method || 'get').toLowerCase()
-    if (['post', 'put', 'patch'].includes(method)) {
-      if (config.data instanceof FormData) {
-        if (!config.data.has('user_registration_id')) {
-          config.data.append('user_registration_id', uid)
-        }
-      } else {
-        config.data = { user_registration_id: uid, ...(config.data || {}) }
-      }
-    } else {
-      config.params = { ...(config.params || {}), user_registration_id: uid }
-    }
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
 
-  if (!config.meta?.skipLoader) loader.start() // ✅ AHORA SÍ FUNCIONA
+  // Mostrar loader (excepto si se indica lo contrario)
+  if (!config.meta?.skipLoader) {
+    loader.start()
+  }
+
   return config
 }, (error) => {
   loader.stop()
   return Promise.reject(error)
 })
 
+// Response interceptor
 api.interceptors.response.use((response) => {
-  if (!response.config.meta?.skipLoader) loader.stop()
+  if (!response.config.meta?.skipLoader) {
+    loader.stop()
+  }
   return response
 }, (error) => {
-  if (!error.config?.meta?.skipLoader) loader.stop()
+  if (!error.config?.meta?.skipLoader) {
+    loader.stop()
+  }
+  
+  // Manejar errores de autenticación
+  if (error.response?.status === 401) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    window.location.href = '/admin/login'
+  }
+  
   return Promise.reject(error)
 })
 

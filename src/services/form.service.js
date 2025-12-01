@@ -1,3 +1,4 @@
+// src/services/form.service.js
 import api from './api'
 
 class FormService {
@@ -12,13 +13,20 @@ class FormService {
     return response.data
   }
 
+  // ✅ FORMULARIO PÚBLICO (sin autenticación requerida en el backend)
   async getPublic(uuid) {
-  const response = await api.get(`/forms/public/${uuid}`)
-  return response
-}
+    const response = await api.get(`/forms/public/${uuid}`)
+    return response // Retorna la respuesta completa de axios
+  }
 
   async list(params = {}) {
     const response = await api.get('/forms', { params })
+    return response.data
+  }
+
+  // Alias para compatibilidad
+  async get(uuid) {
+    const response = await api.get(`/forms/${uuid}`)
     return response.data
   }
 
@@ -40,6 +48,27 @@ class FormService {
   async duplicate(uuid) {
     const response = await api.post(`/forms/${uuid}/duplicate`)
     return response.data
+  }
+
+  // Estadísticas
+  async getStats(uuid) {
+    const response = await api.get(`/forms/${uuid}/stats`)
+    return response.data
+  }
+
+  // Respuestas
+  async getResponses(uuid, params = {}) {
+    const response = await api.get(`/forms/${uuid}/responses`, { params })
+    return response.data
+  }
+
+  // Exportar
+  async exportResponses(uuid, params = {}) {
+    const response = await api.get(`/forms/${uuid}/responses/export`, { 
+      params,
+      responseType: 'blob'
+    })
+    return response
   }
 }
 

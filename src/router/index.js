@@ -8,7 +8,7 @@ const routes = [
     component: () => import('@/views/public/FormularioActual.vue')
   },
 
-    {
+  {
     path: '/form/:uuid',
     name: 'PublicForm',
     component: () => import('@/views/public/PublicFormView.vue'),
@@ -57,17 +57,23 @@ const routes = [
         name: 'AdminFormEdit',
         component: () => import('@/views/admin/forms/FormEditView.vue')
       },
-          {
-      path: 'forms/:id',
-      name: 'AdminFormDetail',
-      component: () => import('@/views/admin/forms/FormDetailView.vue')
-    },
-    {
-      path: 'forms/:id/responses',
-      name: 'AdminFormResponses',
-      component: () => import('@/views/admin/forms/FormResponsesView.vue')
-    },
-       // Plantillas
+      {
+        path: 'forms/:id',
+        name: 'AdminFormDetail',
+        component: () => import('@/views/admin/forms/FormDetailView.vue')
+      },
+      {
+        path: 'forms/:id/responses',
+        name: 'AdminFormResponses',
+        component: () => import('@/views/admin/forms/FormResponsesView.vue')
+      },
+      // Respuestas generales (todas las respuestas)
+      {
+        path: 'responses',
+        name: 'AdminResponses',
+        component: () => import('@/views/admin/responses/ResponsesListView.vue')
+      },
+      // Plantillas
       {
         path: 'templates',
         name: 'AdminTemplates',
@@ -78,7 +84,7 @@ const routes = [
         name: 'AdminUsers',
         component: () => import('@/views/admin/users/UsersListView.vue')
       },
-            // Cursos
+      // Cursos - ARREGLADO
       {
         path: 'courses',
         name: 'AdminCourses',
@@ -96,6 +102,20 @@ const routes = [
         component: () => import('@/views/admin/SettingsView.vue')
       }
     ]
+  },
+  
+  // Catch all route - 404
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('@/views/NotFoundView.vue')
+  },
+
+  //ruta de linkedin
+  {
+    path: '/linkedin/callback',
+    name: 'LinkedInCallback',
+    component: () => import('@/views/LinkedInCallbackView.vue')
   }
 ]
 

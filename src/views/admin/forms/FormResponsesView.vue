@@ -241,16 +241,33 @@ async function loadData() {
   try {
     loading.value = true
     
-    // Cargar formulario
-    const formResponse = await formService.get(formId.value)
-    form.value = formResponse.data
+    // Cargar formulario - CORREGIDO
+    const formResponse = await formService.get(formUuid.value)
     
-    // Cargar respuestas
-    const responsesResponse = await formService.getResponses(formId.value)
-    responses.value = responsesResponse.data.responses || []
+    // Extraer correctamente el formulario de la respuesta
+    if (formResponse.data && formResponse.data.form) {
+      form.value = formResponse.data.form
+    } else if (formResponse.form) {
+      form.value = formResponse.form
+    } else {
+      form.value = formResponse.data || formResponse
+    }
+    
+    // Cargar respuestas - CORREGIDO
+    const responsesResponse = await formService.getResponses(formUuid.value)
+    
+    // Extraer correctamente las respuestas
+    if (responsesResponse.data && responsesResponse.data.responses) {
+      responses.value = responsesResponse.data.responses
+    } else if (responsesResponse.responses) {
+      responses.value = responsesResponse.responses
+    } else {
+      responses.value = responsesResponse.data || []
+    }
     
   } catch (error) {
     console.error('Error:', error)
+    // Opcional: Mostrar toast o mensaje de error
   } finally {
     loading.value = false
   }
@@ -279,17 +296,18 @@ async function deleteResponse(response) {
 
 async function exportResponses() {
   try {
-    const { data } = await formService.exportResponses(formId.value, {
-      format: 'excel'
+    const { data } = await formService.exportResponses(formUuid.value, {
+      format: 'csv'  // o 'excel' si lo soportas
     })
     
     // Descargar archivo
-    const blob = new Blob([data], { type: 'application/vnd.ms-excel' })
+    const blob = new Blob([data], { type: 'text/csv' })
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `respuestas-${form.value.title}.xlsx`
+    a.download = `respuestas-${form.value.title}.csv`
     a.click()
+    window.URL.revokeObjectURL(url)
   } catch (error) {
     console.error('Error:', error)
   }
