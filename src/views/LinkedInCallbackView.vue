@@ -66,16 +66,22 @@ async function publishToLinkedIn(code) {
       images.push(certificateImage)
     }
     
-    // 3. Convertir PDF a imagen si existe
-    if (examData.value.pdfUrl) {
+    // 3. ★ Convertir PDF a imagen si existe (usando certificate_id)
+    if (examData.value.certificateId) {
       statusMessage.value = 'Convirtiendo certificado PDF...'
       
       try {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 segundos
+        
         const pdfResponse = await fetch(`${API_URL}/linkedin/pdf-to-image`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pdf_url: examData.value.pdfUrl })
+          body: JSON.stringify({ certificate_id: examData.value.certificateId }),
+          signal: controller.signal
         })
+        
+        clearTimeout(timeoutId)
         
         const pdfData = await pdfResponse.json()
         
@@ -84,12 +90,12 @@ async function publishToLinkedIn(code) {
           console.log('✅ PDF convertido a imagen')
         }
       } catch (err) {
-        console.warn('No se pudo convertir el PDF:', err)
-        // Continuar sin la imagen del PDF
+        console.warn('⚠️ No se pudo convertir el PDF:', err.message)
+        // Continuar sin el PDF
       }
     }
     
-    // 4. Publicar en LinkedIn con todas las imágenes
+    // 4. Publicar en LinkedIn
     statusMessage.value = 'Publicando en LinkedIn...'
     
     const postResponse = await fetch(`${API_URL}/linkedin/post-with-images`, {
@@ -107,9 +113,8 @@ async function publishToLinkedIn(code) {
     
     if (postData.ok) {
       status.value = 'success'
-      if (postData.data?.postId) {
-        linkedInPostUrl.value = `https://www.linkedin.com/feed/update/${postData.data.postId}`
-      }
+      statusMessage.value = '¡Publicado exitosamente!'
+      linkedInPostUrl.value = 'https://www.linkedin.com/feed/'
     } else {
       status.value = 'error'
       errorMessage.value = postData.error || 'Error al publicar'
@@ -118,7 +123,7 @@ async function publishToLinkedIn(code) {
     cleanupLinkedIn()
     
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error en LinkedIn:', error)
     status.value = 'error'
     errorMessage.value = 'Error de conexión'
     cleanupLinkedIn()
@@ -131,10 +136,14 @@ function cleanupLinkedIn() {
   localStorage.removeItem('linkedin_certificate_image')
 }
 
+function goToLinkedIn() {
+  window.open(linkedInPostUrl.value, '_blank')
+}
+
 function goBack() {
-  const formUuid = examData.value?.formUuid
-  if (formUuid) {
-    router.push(`/form/${formUuid}`)
+  const returnUrl = examData.value?.returnUrl
+  if (returnUrl) {
+    router.push(returnUrl)
   } else {
     router.push('/')
   }
@@ -142,147 +151,148 @@ function goBack() {
 </script>
 
 <template>
-  <div class="callback-screen">
+  <div class="linkedin-callback">
     <div class="callback-card">
-      <img src="@/assets/images/weonline.png" alt="WE Online" class="brand-logo" />
+      <!-- Loading -->
+      <template v-if="status === 'loading'">
+        <div class="spinner"></div>
+        <h2>{{ statusMessage }}</h2>
+        <p class="text-muted">Por favor espera...</p>
+      </template>
       
-      <div v-if="status === 'loading'" class="status-section">
-        <div class="loader"></div>
-        <h2>Publicando en LinkedIn...</h2>
-        <p>{{ statusMessage }}</p>
-      </div>
-      
-      <div v-else-if="status === 'success'" class="status-section success">
-        <div class="status-icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
+      <!-- Success -->
+      <template v-else-if="status === 'success'">
+        <div class="icon-success">✓</div>
+        <h2>¡Publicación exitosa!</h2>
+        <p>Tu certificado ha sido compartido en LinkedIn</p>
+        <div class="button-group">
+          <button @click="goToLinkedIn" class="btn btn-primary">
+            Ver en LinkedIn
+          </button>
+          <button @click="goBack" class="btn btn-outline">
+            Volver al examen
+          </button>
         </div>
-        <h2>¡Publicado exitosamente!</h2>
-        <p>Tu logro y certificado ya están visibles en tu perfil de LinkedIn</p>
-        <a :href="linkedInPostUrl" target="_blank" class="btn-view">Ver en LinkedIn</a>
-        <button @click="goBack" class="btn-back">Volver al resultado</button>
-      </div>
+      </template>
       
-      <div v-else-if="status === 'error'" class="status-section error">
-        <div class="status-icon error">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-          </svg>
-        </div>
-        <h2>Error al publicar</h2>
-        <p>{{ errorMessage }}</p>
-        <button @click="goBack" class="btn-back">Volver</button>
-      </div>
+      <!-- Error -->
+      <template v-else>
+        <div class="icon-error">✕</div>
+        <h2>Error</h2>
+        <p class="error-text">{{ errorMessage }}</p>
+        <button @click="goBack" class="btn btn-outline">
+          Volver
+        </button>
+      </template>
     </div>
   </div>
 </template>
 
 <style scoped>
-.callback-screen {
+.linkedin-callback {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  padding: 24px;
+  background: #f5f5f5;
+  padding: 20px;
 }
 
 .callback-card {
   background: white;
-  border-radius: 20px;
+  border-radius: 16px;
   padding: 48px;
-  max-width: 440px;
-  width: 100%;
   text-align: center;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
 }
 
-.brand-logo {
-  height: 40px;
-  margin-bottom: 32px;
-}
-
-.status-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-.status-section h2 {
-  font-size: 22px;
-  font-weight: 600;
-  color: #111827;
-  margin: 0;
-}
-
-.status-section p {
-  font-size: 14px;
-  color: #64748b;
-  margin: 0;
-  line-height: 1.5;
-}
-
-.loader {
+.spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid #e5e7eb;
+  border: 4px solid #e5e5e5;
   border-top-color: #0077b5;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 24px;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-.status-icon {
-  width: 80px;
-  height: 80px;
+.icon-success {
+  width: 64px;
+  height: 64px;
+  background: #059669;
+  color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ecfdf5;
-  color: #059669;
+  font-size: 32px;
+  margin: 0 auto 24px;
 }
 
-.status-icon.error {
-  background: #fef2f2;
+.icon-error {
+  width: 64px;
+  height: 64px;
+  background: #dc2626;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin: 0 auto 24px;
+}
+
+h2 {
+  margin-bottom: 8px;
+  color: #1a1a1a;
+}
+
+.text-muted {
+  color: #666;
+}
+
+.error-text {
   color: #dc2626;
 }
 
-.btn-view {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 28px;
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-size: 15px;
+}
+
+.btn-primary {
   background: #0077b5;
   color: white;
-  text-decoration: none;
-  border-radius: 12px;
-  font-weight: 600;
-  margin-top: 16px;
 }
 
-.btn-view:hover {
-  background: #005885;
+.btn-primary:hover {
+  background: #006097;
 }
 
-.btn-back {
-  padding: 12px 24px;
-  background: #f3f4f6;
-  border: none;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
-  cursor: pointer;
-  margin-top: 8px;
+.btn-outline {
+  background: transparent;
+  border: 2px solid #ddd;
+  color: #333;
 }
 
-.btn-back:hover {
-  background: #e5e7eb;
+.btn-outline:hover {
+  background: #f5f5f5;
 }
 </style>

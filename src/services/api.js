@@ -4,7 +4,7 @@ import { loader } from '@/utils/loader'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:3000/',
-  timeout: 90000,
+  timeout: 120000,
   headers: { 'Content-Type': 'application/json' }
 })
 

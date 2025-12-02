@@ -945,8 +945,9 @@ function downloadTicket() {
 // ═══════════════════════════════════════
 async function shareLinkedIn() {
   const result = examResult.value
+  const student = odooStudent.value
   
-  // Generar texto del post con timestamp para evitar duplicados
+  // Timestamp para evitar duplicados
   const timestamp = new Date().toLocaleString('es-PE', { 
     day: '2-digit', 
     month: 'short', 
@@ -955,14 +956,20 @@ async function shareLinkedIn() {
     minute: '2-digit'
   })
   
-  const postText = `🎓 ¡Completé la evaluación "${form.value.title}"!\n\n` +
+  // Texto del post
+  let postText = `🎓 ¡Completé la evaluación "${form.value.title}"!\n\n` +
     `📊 Resultado: ${result?.percentage || 0}% ${result?.passed ? '✅ APROBADO' : ''}\n` +
-    `✔️ ${result?.correct_count || 0}/${result?.total_questions || 0} respuestas correctas\n\n` +
-    `Gracias a @WE Online por esta oportunidad de aprendizaje.\n\n` +
+    `✔️ ${result?.correct_count || 0}/${result?.total_questions || 0} respuestas correctas\n\n`
+  
+  if (student?.full_name) {
+    postText += `👤 ${student.full_name}\n\n`
+  }
+  
+  postText += `Gracias a @WE Online por esta oportunidad de aprendizaje.\n\n` +
     `📅 ${timestamp}\n\n` +
     `#WEOnline #EducaciónEjecutiva #Certificación #DesarrolloProfesional`
   
-  // Generar imagen del certificado
+  // Generar imagen del certificado (score visual)
   generatingImage.value = true
   const imageBlob = await generateCertificateImage()
   generatingImage.value = false
@@ -972,7 +979,7 @@ async function shareLinkedIn() {
     return
   }
   
-  // Datos del examen
+  // ★ Datos del examen - AHORA INCLUYE certificateId
   const examData = {
     title: form.value.title,
     percentage: result?.percentage || 0,
@@ -980,8 +987,11 @@ async function shareLinkedIn() {
     correct: result?.correct_count || 0,
     total: result?.total_questions || 0,
     formUuid: form.value.uuid,
-    studentName: odooStudent.value?.full_name || '',
-    pdfUrl: result?.odoo?.pdf_url || null
+    studentName: student?.full_name || '',
+    // ★ IMPORTANTE: Agregar el ID del certificado para obtener el PDF
+    certificateId: result?.odoo?.certificate_id || null,
+    pdfUrl: result?.odoo?.pdf_url || null,
+    returnUrl: window.location.pathname
   }
   
   // Guardar datos
@@ -1010,7 +1020,7 @@ async function shareLinkedIn() {
       `state=${encodeURIComponent(state)}&` +
       `scope=${scope}`
     
-    // Redirigir a LinkedIn directamente
+    // Redirigir a LinkedIn
     window.location.href = authUrl
   }
 }
