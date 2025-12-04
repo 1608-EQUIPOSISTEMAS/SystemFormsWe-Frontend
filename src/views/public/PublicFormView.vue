@@ -217,6 +217,83 @@
         </div>
       </div>
 
+      <div v-else-if="!isExam" class="survey-result-screen">
+        <div class="survey-result-card">
+          <!-- Logo -->
+          <div class="survey-logo-wrapper">
+            <img src="@/assets/images/weonline.png" alt="WE Online" class="survey-result-logo" />
+          </div>
+          
+          <!-- Success Animation -->
+          <div class="success-badge">
+            <div class="success-icon-wrapper">
+              <svg class="success-check" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div class="success-rings">
+              <span class="ring ring-1"></span>
+              <span class="ring ring-2"></span>
+            </div>
+          </div>
+          
+          <!-- Content -->
+          <div class="survey-result-content">
+            <h1 class="survey-result-title">¡Gracias por tu respuesta!</h1>
+            
+            <p class="survey-result-message">
+              {{ form.submit_message || 'Tu respuesta ha sido registrada correctamente.' }}
+            </p>
+          </div>
+          
+          <!-- Form Badge -->
+          <div class="survey-form-badge">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            <span>{{ form.title }}</span>
+          </div>
+          
+          <!-- Info Pills -->
+          <div class="survey-info-pills">
+            <div class="info-pill">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              <span>{{ formatDate(new Date()) }}</span>
+            </div>
+            <div class="info-pill">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+              <span>{{ questions.length }} respuestas</span>
+            </div>
+          </div>
+          
+          <!-- Divider -->
+          <div class="survey-divider"></div>
+          
+          <!-- Action Button -->
+          <button @click="goHome" class="btn-survey-home">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span>Volver al inicio</span>
+          </button>
+          
+          <!-- Footer Text -->
+          <p class="survey-footer-text">
+            Puedes cerrar esta ventana de forma segura
+          </p>
+        </div>
+      </div>
+
       <!-- ═══════════════════════════════════════════════════════════
            PASO 3: RESULTADOS - Layout 70/30 con Puntuación Real
            ═══════════════════════════════════════════════════════════ -->
@@ -450,6 +527,10 @@ const currentReview = computed(() => examResult.value?.details?.[reviewIndex.val
 const answeredCount = computed(() => questions.value.filter(q => isAnswered(q.id)).length)
 const allAnswered = computed(() => answeredCount.value === questions.value.length)
 
+
+function goHome() {
+  window.location.href = '/'
+}
 // ═══════════════════════════════════════════════════════════════
 // COMPUTED - Sistema de Puntuación
 // ═══════════════════════════════════════════════════════════════
@@ -735,6 +816,340 @@ watch(answers, () => {
   }
 }, { deep: true })
 </script>
+
+<style scoped>
+/* ========== SURVEY RESULT SCREEN ========== */
+.survey-result-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background decoration */
+.survey-result-screen::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(4, 153, 213, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.survey-result-screen::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(0, 15, 90, 0.06) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* ========== CARD ========== */
+.survey-result-card {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 480px;
+  text-align: center;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 15, 90, 0.05),
+    0 10px 15px -3px rgba(0, 15, 90, 0.08),
+    0 20px 25px -5px rgba(0, 15, 90, 0.05);
+  position: relative;
+  z-index: 1;
+  animation: cardEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ========== LOGO ========== */
+.survey-logo-wrapper {
+  margin-bottom: 32px;
+}
+
+.survey-result-logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* ========== SUCCESS BADGE ========== */
+.success-badge {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 28px;
+}
+
+.success-icon-wrapper {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 50%;
+  z-index: 2;
+  animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+}
+
+.success-check {
+  color: #ffffff;
+  animation: checkDraw 0.4s ease-out 0.5s both;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes checkDraw {
+  from {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Animated rings */
+.success-rings {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  border: 2px solid #10b981;
+  border-radius: 50%;
+  animation: ringPulse 2s ease-out infinite;
+}
+
+.ring-1 {
+  animation-delay: 0.6s;
+}
+
+.ring-2 {
+  animation-delay: 1s;
+}
+
+@keyframes ringPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+/* ========== CONTENT ========== */
+.survey-result-content {
+  margin-bottom: 24px;
+}
+
+.survey-result-title {
+  margin: 0 0 12px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1.3;
+}
+
+.survey-result-message {
+  margin: 0;
+  font-size: 15px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+/* ========== FORM BADGE ========== */
+.survey-form-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #000F5A 0%, #001a7a 100%);
+  border-radius: 100px;
+  margin-bottom: 20px;
+}
+
+.survey-form-badge svg {
+  color: rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+
+.survey-form-badge span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+
+/* ========== INFO PILLS ========== */
+.survey-info-pills {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+
+.info-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.info-pill svg {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+/* ========== DIVIDER ========== */
+.survey-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+  margin-bottom: 28px;
+}
+
+/* ========== BUTTON ========== */
+.btn-survey-home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 24px;
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a2e;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-survey-home:hover {
+  background: #f8fafc;
+  border-color: #0499D5;
+  color: #0499D5;
+}
+
+.btn-survey-home:active {
+  transform: scale(0.98);
+}
+
+.btn-survey-home svg {
+  transition: transform 0.2s ease;
+}
+
+.btn-survey-home:hover svg {
+  transform: translateY(-1px);
+}
+
+/* ========== FOOTER TEXT ========== */
+.survey-footer-text {
+  margin: 20px 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 520px) {
+  .survey-result-screen {
+    padding: 16px;
+    align-items: flex-start;
+    padding-top: 40px;
+  }
+  
+  .survey-result-card {
+    padding: 36px 24px;
+    border-radius: 20px;
+  }
+  
+  .survey-result-logo {
+    height: 32px;
+  }
+  
+  .success-badge {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .success-icon-wrapper svg {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .survey-result-title {
+    font-size: 20px;
+  }
+  
+  .survey-result-message {
+    font-size: 14px;
+  }
+  
+  .survey-form-badge {
+    padding: 8px 14px;
+  }
+  
+  .survey-form-badge span {
+    font-size: 12px;
+    max-width: 200px;
+  }
+  
+  .info-pill {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .btn-survey-home {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+}
+</style>
 
 <style scoped>
 /* ════════════════════════════════════════════════════════════════

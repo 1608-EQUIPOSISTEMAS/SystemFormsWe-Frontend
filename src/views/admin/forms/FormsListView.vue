@@ -87,50 +87,6 @@
             {{ form.form_type === 'EXAM' ? 'Examen' : 'Encuesta' }}
           </div>
           <div class="card-menu">
-            <button 
-              class="menu-btn" 
-              @click="toggleMenu(form.uuid)"
-              @click.stop
-            >
-              <i class="bi bi-three-dots-vertical"></i>
-            </button>
-            <Transition name="dropdown">
-              <div 
-                v-if="openMenu === form.uuid" 
-                class="dropdown-menu"
-                @click.stop
-              >
-                <router-link 
-                  :to="`/admin/forms/${form.uuid}/edit`" 
-                  class="menu-item"
-                >
-                  <i class="bi bi-pencil"></i>
-                  Editar
-                </router-link>
-                <button 
-                  class="menu-item"
-                  @click="duplicateForm(form)"
-                >
-                  <i class="bi bi-files"></i>
-                  Duplicar
-                </button>
-                <button 
-                  class="menu-item"
-                  @click="shareForm(form)"
-                >
-                  <i class="bi bi-share"></i>
-                  Compartir
-                </button>
-                <hr>
-                <button 
-                  class="menu-item text-danger"
-                  @click="deleteForm(form)"
-                >
-                  <i class="bi bi-trash"></i>
-                  Eliminar
-                </button>
-              </div>
-            </Transition>
           </div>
         </div>
 
