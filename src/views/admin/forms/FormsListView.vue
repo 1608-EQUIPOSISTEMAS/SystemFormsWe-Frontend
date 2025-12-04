@@ -1,4 +1,3 @@
-<!-- frontend/src/views/admin/forms/FormsListView.vue -->
 <template>
   <div class="forms-page">
     <!-- Header -->
@@ -79,7 +78,7 @@
     <div v-else class="forms-grid">
       <article 
         v-for="form in filteredForms" 
-        :key="form.id"
+        :key="form.uuid"
         class="form-card"
         :class="{ inactive: !form.is_active }"
       >
@@ -90,19 +89,19 @@
           <div class="card-menu">
             <button 
               class="menu-btn" 
-              @click="toggleMenu(form.id)"
+              @click="toggleMenu(form.uuid)"
               @click.stop
             >
               <i class="bi bi-three-dots-vertical"></i>
             </button>
             <Transition name="dropdown">
               <div 
-                v-if="openMenu === form.id" 
+                v-if="openMenu === form.uuid" 
                 class="dropdown-menu"
                 @click.stop
               >
                 <router-link 
-                  :to="`/admin/forms/${form.id}/edit`" 
+                  :to="`/admin/forms/${form.uuid}/edit`" 
                   class="menu-item"
                 >
                   <i class="bi bi-pencil"></i>
@@ -136,7 +135,7 @@
         </div>
 
         <router-link 
-          :to="`/admin/forms/${form.id}`"
+          :to="`/admin/forms/${form.uuid}`"
           class="card-body"
         >
           <h3>{{ form.title }}</h3>
@@ -149,18 +148,18 @@
             </span>
             <span>
               <i class="bi bi-clipboard-check"></i>
-              {{ form.total_questions || 0 }} preguntas
+              {{ form.question_count  || 0 }} preguntas
             </span>
             <span>
               <i class="bi bi-people"></i>
-              {{ form.total_responses || 0 }} respuestas
+              {{ form.response_count  || 0 }} respuestas
             </span>
           </div>
         </router-link>
 
         <div class="card-footer">
           <router-link 
-            :to="`/admin/forms/${form.id}/responses`"
+            :to="`/admin/forms/${form.uuid}/responses`"
             class="btn-secondary"
           >
             <i class="bi bi-bar-chart"></i>
@@ -223,7 +222,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { debounce } from 'lodash-es'
 import formService from '@/services/form.service'
@@ -286,30 +285,34 @@ async function loadForms() {
     forms.value = data.forms || []
   } catch (error) {
     console.error('Error cargando formularios:', error)
-    // Mostrar toast de error
   } finally {
     loading.value = false
   }
 }
 
-// Toggle menú
-function toggleMenu(formId) {
-  openMenu.value = openMenu.value === formId ? null : formId
+// Toggle menú - usa uuid como identificador
+function toggleMenu(formUuid) {
+  openMenu.value = openMenu.value === formUuid ? null : formUuid
 }
 
-// Click fuera del menú
+// Cerrar menú al hacer click fuera
+function handleClickOutside() {
+  openMenu.value = null
+}
+
 onMounted(() => {
-  document.addEventListener('click', () => {
-    openMenu.value = null
-  })
-  
+  document.addEventListener('click', handleClickOutside)
   loadForms()
 })
 
-// Activar/Desactivar
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
+// Activar/Desactivar - usa uuid
 async function toggleActive(form) {
   try {
-    await formService.update(form.id, {
+    await formService.update(form.uuid, {
       is_active: !form.is_active
     })
     form.is_active = !form.is_active
@@ -318,12 +321,12 @@ async function toggleActive(form) {
   }
 }
 
-// Duplicar
+// Duplicar - usa uuid
 async function duplicateForm(form) {
+  openMenu.value = null
   try {
-    await formService.duplicate(form.id)
+    await formService.duplicate(form.uuid)
     await loadForms()
-    // Mostrar toast de éxito
   } catch (error) {
     console.error('Error:', error)
   }
@@ -331,6 +334,7 @@ async function duplicateForm(form) {
 
 // Compartir
 function shareForm(form) {
+  openMenu.value = null
   formToShare.value = form
   shareUrl.value = `${window.location.origin}/form/${form.uuid}`
   showShareModal.value = true
@@ -343,7 +347,6 @@ async function copyUrl() {
     copied.value = true
     setTimeout(() => copied.value = false, 2000)
   } catch (error) {
-    // Fallback
     shareInput.value?.select()
     document.execCommand('copy')
     copied.value = true
@@ -352,19 +355,22 @@ async function copyUrl() {
 
 // Eliminar
 function deleteForm(form) {
+  openMenu.value = null
   formToDelete.value = form
   showDeleteModal.value = true
 }
 
+// Confirmar eliminación - usa uuid
 async function confirmDelete() {
   if (!formToDelete.value) return
   
   deleting.value = true
   try {
-    await formService.delete(formToDelete.value.id)
-    forms.value = forms.value.filter(f => f.id !== formToDelete.value.id)
+    await formService.delete(formToDelete.value.uuid)
+    // Filtra por uuid, no por id
+    forms.value = forms.value.filter(f => f.uuid !== formToDelete.value.uuid)
     showDeleteModal.value = false
-    // Mostrar toast de éxito
+    formToDelete.value = null
   } catch (error) {
     console.error('Error:', error)
   } finally {

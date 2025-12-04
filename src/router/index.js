@@ -95,6 +95,12 @@ const routes = [
         name: 'AdminProfile',
         component: () => import('@/views/admin/ProfileView.vue')
       },
+      // Reportes de formularios
+      {
+        path: 'forms/:id/reports',
+        name: 'AdminFormReports',
+        component: () => import('@/views/admin/forms/FormReportsView.vue')
+      },
       // Configuración
       {
         path: 'settings',
