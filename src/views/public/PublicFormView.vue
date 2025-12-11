@@ -537,8 +537,12 @@ function goHome() {
 
 // Calcula el máximo puntaje basado en los puntos de cada pregunta
 const calculatedMaxScore = computed(() => {
-  const totalPoints = questions.value.reduce((sum, q) => sum + (q.points || 1), 0)
-  return totalPoints
+  // Si el backend ya calculó el max_score, usarlo
+  if (form.value?.max_score) {
+    return form.value.max_score
+  }
+  // Fallback: calcular basado en preguntas cargadas
+  return questions.value.reduce((sum, q) => sum + (parseFloat(q.points) || 1), 0)
 })
 
 // Determina si el sistema usa puntos (cuando max_score > total_questions)
@@ -698,22 +702,37 @@ async function submitForm(auto = false) {
   if (!auto && !validateAll()) return
   submitting.value = true
   if (timerInterval.value) clearInterval(timerInterval.value)
+  
   try {
-    const formatted = questions.value.map(q => ({ question_id: q.id, answer_value: answers[q.id] }))
-    const timeSpent = form.value.time_limit_minutes ? (form.value.time_limit_minutes * 60) - timeRemaining.value : null
+    const formatted = questions.value.map(q => ({ 
+      question_id: q.id, 
+      answer_value: answers[q.id] 
+    }))
+    
+    const timeSpent = form.value.time_limit_minutes 
+      ? (form.value.time_limit_minutes * 60) - timeRemaining.value 
+      : null
+    
+    // NUEVO: Enviar los IDs de las preguntas que fueron mostradas
+    const questionsShown = questions.value.map(q => q.id)
+    
     const payload = {
       form_uuid: form.value.uuid,
       answers: formatted,
       time_spent: timeSpent,
       respondent_email: odooStudent.value?.email || null,
-      respondent_name: odooStudent.value?.full_name || null
+      respondent_name: odooStudent.value?.full_name || null,
+      questions_shown: questionsShown // ← NUEVO CAMPO
     }
+    
     if (odooValidated.value && odooStudent.value) {
       payload.odoo_partner_id = odooStudent.value.partner_id
       payload.odoo_student_names = odooStudent.value.names
       payload.odoo_student_surnames = odooStudent.value.surnames
     }
+    
     const res = await responseService.submit(payload)
+    
     if (isExam.value && res.data?.data) {
       const data = res.data.data
       examResult.value = {
@@ -728,11 +747,16 @@ async function submitForm(auto = false) {
         odoo: data.odoo || null
       }
     }
+    
     submitted.value = true
     await nextTick()
     generateQR()
-  } catch (e) { alert(auto ? 'Tiempo agotado. Error al enviar.' : 'Error al enviar.') }
-  finally { submitting.value = false }
+  } catch (e) {
+    console.error('Error al enviar:', e)
+    alert(auto ? 'Tiempo agotado. Error al enviar.' : 'Error al enviar respuestas.')
+  } finally {
+    submitting.value = false
+  }
 }
 
 function validateAll() {

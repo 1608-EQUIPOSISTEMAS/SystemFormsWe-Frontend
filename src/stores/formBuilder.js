@@ -21,6 +21,9 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
       allow_multiple_responses: false,
       show_progress_bar: true,
       shuffle_questions: false,
+      // Nuevos campos para banco de preguntas
+      use_question_bank: false,
+      questions_to_show: null,
       passing_score: null,
       show_score_after_submit: false,
       show_correct_answers: false,
@@ -33,6 +36,23 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
   const loading = ref(false)
   const saving = ref(false)
   const isDirty = ref(false)
+
+  const questionBankValid = computed(() => {
+  if (!form.value.settings.use_question_bank) return true
+  const toShow = form.value.settings.questions_to_show
+  if (!toShow || toShow < 1) return false
+  return toShow <= questions.value.length
+})
+
+const questionBankInfo = computed(() => {
+  if (!form.value.settings.use_question_bank) return null
+  return {
+    total: questions.value.length,
+    toShow: form.value.settings.questions_to_show || 0,
+    valid: questionBankValid.value
+  }
+})
+
 
   // Getters
   const hasQuestions = computed(() => questions.value.length > 0)
@@ -260,21 +280,26 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
     try {
       // Preparar settings
       const settings = {
-        is_active: form.value.settings.is_active,
-        is_public: form.value.settings.is_public,
-        requires_login: form.value.settings.requires_login,
-        available_from: form.value.settings.available_from || null,
-        available_until: form.value.settings.available_until || null,
-        time_limit_minutes: form.value.settings.time_limit_minutes || null,
-        allow_multiple_responses: form.value.settings.allow_multiple_responses,
-        show_progress_bar: form.value.settings.show_progress_bar,
-        shuffle_questions: form.value.settings.shuffle_questions,
-        passing_score: form.value.settings.passing_score || null,
-        show_score_after_submit: form.value.settings.show_score_after_submit,
-        show_correct_answers: form.value.settings.show_correct_answers,
-        welcome_message: form.value.settings.welcome_message || null,
-        submit_message: form.value.settings.submit_message || null
-      }
+            is_active: form.value.settings.is_active,
+            is_public: form.value.settings.is_public,
+            requires_login: form.value.settings.requires_login,
+            available_from: form.value.settings.available_from || null,
+            available_until: form.value.settings.available_until || null,
+            time_limit_minutes: form.value.settings.time_limit_minutes || null,
+            allow_multiple_responses: form.value.settings.allow_multiple_responses,
+            show_progress_bar: form.value.settings.show_progress_bar,
+            shuffle_questions: form.value.settings.shuffle_questions,
+            // Nuevos campos
+            use_question_bank: form.value.settings.use_question_bank,
+            questions_to_show: form.value.settings.use_question_bank 
+              ? form.value.settings.questions_to_show 
+              : null,
+            passing_score: form.value.settings.passing_score || null,
+            show_score_after_submit: form.value.settings.show_score_after_submit,
+            show_correct_answers: form.value.settings.show_correct_answers,
+            welcome_message: form.value.settings.welcome_message || null,
+            submit_message: form.value.settings.submit_message || null
+          }
 
       // Preparar preguntas
       const preparedQuestions = questions.value.map((q, index) => ({
@@ -348,6 +373,9 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
             allow_multiple_responses: !!formData.allow_multiple_responses,
             show_progress_bar: !!formData.show_progress_bar,
             shuffle_questions: !!formData.shuffle_questions,
+            // Nuevos campos
+            use_question_bank: !!formData.use_question_bank,
+            questions_to_show: formData.questions_to_show,
             passing_score: formData.passing_score,
             show_score_after_submit: !!formData.show_score_after_submit,
             show_correct_answers: !!formData.show_correct_answers,
@@ -453,6 +481,8 @@ export const useFormBuilderStore = defineStore('formBuilder', () => {
     removeOption,
     saveForm,
     loadForm,
-    updateForm
+    updateForm,
+    questionBankValid,
+    questionBankInfo
   }
 })

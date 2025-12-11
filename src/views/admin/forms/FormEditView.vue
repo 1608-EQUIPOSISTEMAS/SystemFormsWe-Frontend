@@ -33,6 +33,11 @@
               <span class="badge status" :class="{ active: store.form.settings?.is_active }">
                 {{ store.form.settings?.is_active ? 'Activo' : 'Inactivo' }}
               </span>
+              <!-- Badge de banco de preguntas -->
+              <span v-if="store.form.settings?.use_question_bank" class="badge bank">
+                <i class="bi bi-shuffle"></i>
+                {{ store.form.settings.questions_to_show }}/{{ store.questions?.length }} aleatorias
+              </span>
             </div>
             <input
               type="text"
@@ -98,7 +103,11 @@
             <div class="summary-stats">
               <div class="stat">
                 <span class="stat-value">{{ store.questions?.length || 0 }}</span>
-                <span class="stat-label">Preguntas</span>
+                <span class="stat-label">{{ store.form.settings?.use_question_bank ? 'En banco' : 'Preguntas' }}</span>
+              </div>
+              <div class="stat" v-if="store.form.settings?.use_question_bank">
+                <span class="stat-value">{{ store.form.settings.questions_to_show || 0 }}</span>
+                <span class="stat-label">Se muestran</span>
               </div>
               <div class="stat" v-if="store.form.form_type === 'EXAM'">
                 <span class="stat-value">{{ totalPoints }}</span>
@@ -119,6 +128,21 @@
               rows="3"
               @input="markDirty"
             ></textarea>
+          </div>
+
+          <!-- Alerta banco de preguntas activo -->
+          <div v-if="store.form.settings?.use_question_bank" class="bank-alert">
+            <i class="bi bi-shuffle"></i>
+            <div class="bank-alert-content">
+              <strong>Banco de preguntas activo</strong>
+              <p>
+                Se seleccionarán <strong>{{ store.form.settings.questions_to_show }}</strong> preguntas 
+                aleatorias de las <strong>{{ store.questions?.length }}</strong> disponibles para cada intento.
+              </p>
+            </div>
+            <button class="btn-configure" @click="showSettings = true; settingsTab = 'exam'">
+              Configurar
+            </button>
           </div>
 
           <!-- Empty State -->
@@ -204,6 +228,7 @@
                   <span class="toggle-slider"></span>
                   <span class="toggle-label">Mezclar preguntas</span>
                 </label>
+                <p class="setting-help">Cambia el orden de las preguntas en cada intento</p>
               </div>
             </div>
 
@@ -256,6 +281,7 @@
                   placeholder="Sin límite"
                   @change="markDirty"
                 >
+                <p class="setting-help">Dejar vacío para sin límite de tiempo</p>
               </div>
 
               <div class="setting-group">
@@ -269,6 +295,82 @@
                   @change="markDirty"
                 >
               </div>
+
+              <hr class="setting-divider">
+
+              <!-- ═══════════════════════════════════════ -->
+              <!-- BANCO DE PREGUNTAS ALEATORIAS -->
+              <!-- ═══════════════════════════════════════ -->
+              <div class="setting-group bank-section">
+                <div class="bank-header">
+                  <i class="bi bi-shuffle"></i>
+                  <h4>Banco de Preguntas Aleatorias</h4>
+                </div>
+                
+                <label class="setting-toggle">
+                  <input 
+                    type="checkbox" 
+                    v-model="store.form.settings.use_question_bank" 
+                    @change="onQuestionBankToggle"
+                  >
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Activar selección aleatoria</span>
+                </label>
+                <p class="setting-help">
+                  El sistema seleccionará preguntas al azar del banco para cada intento
+                </p>
+
+                <!-- Config banco de preguntas -->
+                <Transition name="fade">
+                  <div v-if="store.form.settings.use_question_bank" class="bank-config">
+                    <div class="bank-stats">
+                      <div class="stat-item">
+                        <span class="stat-value">{{ store.questions?.length || 0 }}</span>
+                        <span class="stat-label">Preguntas en banco</span>
+                      </div>
+                      <div class="stat-arrow">
+                        <i class="bi bi-arrow-right"></i>
+                      </div>
+                      <div class="stat-item highlight">
+                        <input 
+                          type="number" 
+                          v-model.number="store.form.settings.questions_to_show"
+                          :max="store.questions?.length || 0"
+                          min="1"
+                          class="stat-input"
+                          @input="markDirty"
+                        >
+                        <span class="stat-label">Se mostrarán</span>
+                      </div>
+                    </div>
+
+                    <!-- Validación -->
+                    <div v-if="!questionBankValid" class="bank-warning">
+                      <i class="bi bi-exclamation-triangle"></i>
+                      <span v-if="!store.form.settings.questions_to_show">
+                        Ingresa el número de preguntas a mostrar
+                      </span>
+                      <span v-else-if="store.form.settings.questions_to_show > (store.questions?.length || 0)">
+                        No puedes mostrar más preguntas de las que hay en el banco
+                      </span>
+                      <span v-else-if="store.form.settings.questions_to_show < 1">
+                        Debe ser al menos 1 pregunta
+                      </span>
+                    </div>
+
+                    <!-- Info adicional -->
+                    <div v-else class="bank-info">
+                      <i class="bi bi-info-circle"></i>
+                      <span>
+                        Cada estudiante recibirá <strong>{{ store.form.settings.questions_to_show }}</strong> preguntas 
+                        diferentes seleccionadas al azar
+                      </span>
+                    </div>
+                  </div>
+                </Transition>
+              </div>
+
+              <hr class="setting-divider">
 
               <div class="setting-group">
                 <label class="setting-toggle">
@@ -329,6 +431,15 @@
           </div>
           <div class="modal-body preview-body">
             <div class="preview-container">
+              <!-- Aviso de banco aleatorio en preview -->
+              <div v-if="store.form.settings?.use_question_bank" class="preview-bank-notice">
+                <i class="bi bi-shuffle"></i>
+                <span>
+                  Vista previa muestra todas las preguntas. 
+                  En el examen real se mostrarán {{ store.form.settings.questions_to_show }} aleatorias.
+                </span>
+              </div>
+              
               <div class="preview-form">
                 <h1>{{ store.form.title || 'Sin título' }}</h1>
                 <p v-if="store.form.description">{{ store.form.description }}</p>
@@ -441,7 +552,15 @@ let pendingNavigation = null
 
 // Computed
 const canSave = computed(() => {
-  return store.form?.title?.trim() && store.questions?.length > 0
+  // Validar que tenga título y preguntas
+  if (!store.form?.title?.trim() || !store.questions?.length) return false
+  
+  // Si banco de preguntas activo, validar configuración
+  if (store.form.settings?.use_question_bank) {
+    if (!questionBankValid.value) return false
+  }
+  
+  return true
 })
 
 const totalPoints = computed(() => {
@@ -449,9 +568,29 @@ const totalPoints = computed(() => {
   return store.questions.reduce((sum, q) => sum + (parseFloat(q.points) || 0), 0)
 })
 
+// Validación del banco de preguntas
+const questionBankValid = computed(() => {
+  if (!store.form.settings?.use_question_bank) return true
+  const toShow = store.form.settings.questions_to_show
+  if (!toShow || toShow < 1) return false
+  return toShow <= (store.questions?.length || 0)
+})
+
 // Methods
 function markDirty() {
   isDirty.value = true
+}
+
+function onQuestionBankToggle() {
+  markDirty()
+  // Si se activa y no hay valor, poner un default
+  if (store.form.settings.use_question_bank && !store.form.settings.questions_to_show) {
+    store.form.settings.questions_to_show = Math.min(10, store.questions?.length || 10)
+  }
+  // Si se desactiva, limpiar el valor
+  if (!store.form.settings.use_question_bank) {
+    store.form.settings.questions_to_show = null
+  }
 }
 
 function getTypeIcon(code) {
@@ -486,6 +625,11 @@ function updateQuestion(id, data) {
 function removeQuestion(id) {
   store.removeQuestion(id)
   markDirty()
+  
+  // Ajustar questions_to_show si es necesario
+  if (store.form.settings?.use_question_bank && store.form.settings.questions_to_show > store.questions.length) {
+    store.form.settings.questions_to_show = store.questions.length
+  }
 }
 
 function moveQuestion(fromIndex, toIndex) {
@@ -565,8 +709,6 @@ onBeforeRouteLeave((to, from, next) => {
 async function loadFormData() {
   const uuid = route.params.uuid
   
-  console.log('Loading form with UUID:', uuid) // Debug
-  
   if (!uuid) {
     error.value = 'UUID del formulario no encontrado'
     loading.value = false
@@ -577,11 +719,8 @@ async function loadFormData() {
   error.value = null
   
   try {
-    // Load question types first
     await store.loadQuestionTypes()
-    console.log('Question types loaded:', store.questionTypes.length) // Debug
     
-    // Load courses (optional, don't fail if it errors)
     try {
       const courseResponse = await courseService.list()
       courses.value = courseResponse.data?.courses || []
@@ -589,10 +728,7 @@ async function loadFormData() {
       console.warn('Could not load courses:', e)
     }
     
-    // Load form
-    console.log('Loading form...') // Debug
     const success = await store.loadForm(uuid)
-    console.log('Form load result:', success) // Debug
     
     if (!success) {
       error.value = 'No se pudo cargar el formulario'
@@ -605,11 +741,9 @@ async function loadFormData() {
   }
 }
 
-// Initialize - usar watch con immediate para capturar el UUID cuando esté disponible
 watch(
   () => route.params.uuid,
   async (newUuid) => {
-    console.log('UUID detected:', newUuid)
     if (newUuid) {
       await loadFormData()
     }
@@ -707,6 +841,7 @@ watch(
 .form-badges {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .badge {
@@ -723,6 +858,7 @@ watch(
 .badge.survey { background: #d1fae5; color: #047857; }
 .badge.status { background: #fee2e2; color: #dc2626; }
 .badge.status.active { background: #d1fae5; color: #047857; }
+.badge.bank { background: #e0e7ff; color: #4338ca; }
 
 .title-input {
   border: none;
@@ -900,6 +1036,7 @@ watch(
 .stat-label {
   font-size: 0.75rem;
   color: #6b7280;
+  text-align: center;
 }
 
 .editor-main {
@@ -930,6 +1067,54 @@ watch(
   border-radius: 8px;
   resize: vertical;
   font-family: inherit;
+}
+
+/* Bank Alert */
+.bank-alert {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #e0e7ff 0%, #dbeafe 100%);
+  border: 1px solid #a5b4fc;
+  border-radius: 12px;
+}
+
+.bank-alert > i {
+  font-size: 1.5rem;
+  color: #4338ca;
+}
+
+.bank-alert-content {
+  flex: 1;
+}
+
+.bank-alert-content strong {
+  display: block;
+  color: #312e81;
+  margin-bottom: 4px;
+}
+
+.bank-alert-content p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #4338ca;
+}
+
+.btn-configure {
+  padding: 8px 16px;
+  border: 1px solid #4338ca;
+  border-radius: 8px;
+  background: white;
+  color: #4338ca;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-configure:hover {
+  background: #4338ca;
+  color: white;
 }
 
 .empty-questions {
@@ -1102,6 +1287,7 @@ watch(
   border-radius: 12px;
   position: relative;
   transition: 0.2s;
+  flex-shrink: 0;
 }
 
 .toggle-slider::after {
@@ -1141,6 +1327,141 @@ watch(
   gap: 16px;
 }
 
+.setting-divider {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 8px 0;
+}
+
+/* ═══════════════════════════════════════ */
+/* ESTILOS BANCO DE PREGUNTAS */
+/* ═══════════════════════════════════════ */
+.bank-section {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #bae6fd;
+}
+
+.bank-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.bank-header i {
+  font-size: 1.25rem;
+  color: #0284c7;
+}
+
+.bank-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0c4a6e;
+}
+
+.bank-config {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed #7dd3fc;
+}
+
+.bank-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-item .stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e3a5f;
+}
+
+.stat-input {
+  width: 80px;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0284c7;
+  text-align: center;
+  border: 2px solid #7dd3fc;
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: #f0f9ff;
+}
+
+.stat-input:focus {
+  outline: none;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+}
+
+.stat-item .stat-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-item.highlight .stat-label {
+  color: #0284c7;
+  font-weight: 600;
+}
+
+.stat-arrow {
+  color: #94a3b8;
+  font-size: 1.25rem;
+}
+
+.bank-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 0.875rem;
+}
+
+.bank-warning i {
+  color: #f59e0b;
+}
+
+.bank-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  border-radius: 8px;
+  color: #065f46;
+  font-size: 0.875rem;
+}
+
+.bank-info i {
+  color: #10b981;
+  margin-top: 2px;
+}
+
 /* Preview */
 .preview-body {
   background: #f3f4f6;
@@ -1149,6 +1470,23 @@ watch(
 .preview-container {
   max-width: 600px;
   margin: 0 auto;
+}
+
+.preview-bank-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+  color: #92400e;
+}
+
+.preview-bank-notice i {
+  color: #f59e0b;
 }
 
 .preview-form {
@@ -1190,6 +1528,7 @@ watch(
   justify-content: center;
   font-size: 0.75rem;
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .question-text {
@@ -1249,6 +1588,18 @@ watch(
   transform: translateY(20px);
 }
 
+/* Fade transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
 @media (max-width: 1024px) {
   .editor-body {
     grid-template-columns: 1fr;
@@ -1272,6 +1623,15 @@ watch(
   
   .setting-row {
     grid-template-columns: 1fr;
+  }
+  
+  .bank-stats {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .stat-arrow {
+    transform: rotate(90deg);
   }
 }
 </style>

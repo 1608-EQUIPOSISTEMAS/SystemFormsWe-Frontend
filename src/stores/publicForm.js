@@ -1,3 +1,5 @@
+// src/stores/publicForm.js - Actualizado para banco de preguntas
+
 import { defineStore } from 'pinia'
 import { ref, reactive, computed } from 'vue'
 
@@ -28,6 +30,9 @@ export const usePublicFormStore = defineStore('publicForm', () => {
   const odooStudent = ref(null)
   const validatingEmail = ref(false)
 
+  // NUEVO: IDs de preguntas seleccionadas del banco
+  const selectedQuestionIds = ref(null)
+
   // Getters
   const isExam = computed(() => form.value?.form_type === 'EXAM')
   const requiresOdooValidation = computed(() => form.value?.requires_odoo_validation)
@@ -40,45 +45,15 @@ export const usePublicFormStore = defineStore('publicForm', () => {
     return odooValidated.value
   })
 
-  // ═══════════════════════════════════════
-  // VALIDAR ESTUDIANTE EN ODOO
-  // ═══════════════════════════════════════
-  async function validateStudent(email) {
-    if (!form.value?.uuid) return { ok: false, error: 'Formulario no cargado' }
-    
-    validatingEmail.value = true
-    error.value = null
-    
-    try {
-      const res = await fetch(`${API_URL}/public/validate-student`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: email.trim().toLowerCase(),
-          form_uuid: form.value.uuid
-        })
-      })
-      
-      const data = await res.json()
-      
-      if (!data.ok) {
-        error.value = data.error
-        return { ok: false, error: data.error, code: data.code }
-      }
-      
-      if (data.validated) {
-        odooValidated.value = true
-        odooStudent.value = data.student
-      }
-      
-      return { ok: true, student: data.student }
-    } catch (err) {
-      error.value = 'Error de conexión al validar'
-      return { ok: false, error: err.message }
-    } finally {
-      validatingEmail.value = false
+  // NUEVO: Info del banco de preguntas
+  const questionBankInfo = computed(() => {
+    if (!form.value?.use_question_bank) return null
+    return {
+      totalInBank: form.value.total_questions_in_bank,
+      showing: questions.value.length,
+      isRandom: true
     }
-  }
+  })
 
   // ═══════════════════════════════════════
   // CARGAR FORMULARIO
@@ -99,14 +74,24 @@ export const usePublicFormStore = defineStore('publicForm', () => {
       form.value = data.data.form
       questions.value = data.data.questions || []
       
+      // NUEVO: Guardar IDs de preguntas seleccionadas
+      selectedQuestionIds.value = data.data.selected_question_ids || null
+      
       // Inicializar respuestas
       questions.value.forEach(q => {
-        answers[q.id] = q.type_code === 'MULTIPLE_CHOICE' ? [] : null
+        answers[q.id] = q.type_code === 'CHECKBOX' ? [] : null
       })
       
+      // Si es examen con tiempo, iniciar timer
+      if (form.value.form_type === 'EXAM' && form.value.time_limit_minutes) {
+        startTimer(form.value.time_limit_minutes * 60)
+      }
+      
+      startTime.value = new Date()
       return true
+      
     } catch (err) {
-      error.value = 'Error al cargar formulario'
+      error.value = 'Error al cargar el formulario'
       return false
     } finally {
       loading.value = false
@@ -114,123 +99,97 @@ export const usePublicFormStore = defineStore('publicForm', () => {
   }
 
   // ═══════════════════════════════════════
-  // INICIAR EXAMEN (con timer)
+  // ENVIAR RESPUESTAS
   // ═══════════════════════════════════════
-  function startExam() {
-    startTime.value = Date.now()
+  async function submitResponses() {
+    if (submitting.value) return null
     
-    if (form.value?.time_limit_minutes) {
-      timeRemaining.value = form.value.time_limit_minutes * 60
-      
-      timerInterval.value = setInterval(() => {
-        timeRemaining.value--
-        if (timeRemaining.value <= 0) {
-          clearInterval(timerInterval.value)
-          submitExam(true) // Auto-submit
-        }
-      }, 1000)
-    }
-  }
-
-  // ═══════════════════════════════════════
-  // ENVIAR EXAMEN
-  // ═══════════════════════════════════════
-  async function submitExam(autoSubmit = false) {
-    if (submitting.value) return
     submitting.value = true
-    
-    // Detener timer
-    if (timerInterval.value) {
-      clearInterval(timerInterval.value)
-    }
-    
-    // Calcular tiempo empleado
-    const timeSpent = startTime.value 
-      ? Math.floor((Date.now() - startTime.value) / 1000) 
-      : null
-    
-    // Preparar respuestas
-    const answersArray = Object.entries(answers).map(([qid, value]) => ({
-      question_id: parseInt(qid),
-      answer_value: value
-    }))
+    stopTimer()
     
     try {
+      const timeSpent = startTime.value 
+        ? Math.floor((new Date() - startTime.value) / 1000)
+        : null
+
+      const formattedAnswers = questions.value.map(q => ({
+        question_id: q.id,
+        answer_value: answers[q.id]
+      }))
+
       const payload = {
         form_uuid: form.value.uuid,
-        answers: answersArray,
+        answers: formattedAnswers,
         time_spent: timeSpent,
         respondent_email: odooStudent.value?.email || null,
-        respondent_name: odooStudent.value?.full_name || null
+        respondent_name: odooStudent.value?.full_name || null,
+        // NUEVO: Enviar IDs de preguntas mostradas
+        shown_question_ids: selectedQuestionIds.value
       }
-      
-      // Agregar datos Odoo si fue validado
+
+      // Datos de Odoo si aplica
       if (odooValidated.value && odooStudent.value) {
         payload.odoo_partner_id = odooStudent.value.partner_id
         payload.odoo_student_names = odooStudent.value.names
         payload.odoo_student_surnames = odooStudent.value.surnames
       }
-      
+
       const res = await fetch(`${API_URL}/public/responses/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
-      
+
       const data = await res.json()
-      
+
       if (!data.ok) {
-        error.value = data.error
-        return false
+        throw new Error(data.error)
       }
-      
-      // Guardar resultado
+
       examResult.value = {
         response_uuid: data.data.response_uuid,
-        exam_title: data.data.exam_title,
-        score: data.data.score,
+        percentage: data.data.score || 0,
         passed: data.data.passed,
-        correct_count: data.data.correct_count,
-        total_questions: data.data.total_questions,
-        total_score: data.data.total_score,
-        max_score: data.data.max_score,
+        correct_count: data.data.correct_count || 0,
+        total_questions: data.data.total_questions || questions.value.length,
+        total_score: data.data.total_score || 0,
+        max_score: data.data.max_score || 0,
         passing_score: data.data.passing_score,
-        time_spent: data.data.time_spent,
         details: data.data.details || [],
         odoo: data.data.odoo || null
       }
       
       showResults.value = true
-      return true
-      
+      return examResult.value
+
     } catch (err) {
-      error.value = autoSubmit 
-        ? 'Tiempo agotado. Error al enviar.' 
-        : 'Error al enviar respuestas'
-      return false
+      error.value = err.message || 'Error al enviar respuestas'
+      return null
     } finally {
       submitting.value = false
     }
   }
 
   // ═══════════════════════════════════════
-  // NAVEGACIÓN
+  // TIMER FUNCTIONS
   // ═══════════════════════════════════════
-  function goToQuestion(index) {
-    if (index >= 0 && index < questions.value.length) {
-      currentIndex.value = index
-    }
+  function startTimer(seconds) {
+    timeRemaining.value = seconds
+    timerInterval.value = setInterval(() => {
+      if (timeRemaining.value > 0) {
+        timeRemaining.value--
+      } else {
+        stopTimer()
+        // Auto-submit cuando se acaba el tiempo
+        submitResponses()
+      }
+    }, 1000)
   }
-  
-  function nextQuestion() {
-    if (currentIndex.value < questions.value.length - 1) {
-      currentIndex.value++
-    }
-  }
-  
-  function prevQuestion() {
-    if (currentIndex.value > 0) {
-      currentIndex.value--
+
+  function stopTimer() {
+    if (timerInterval.value) {
+      clearInterval(timerInterval.value)
+      timerInterval.value = null
     }
   }
 
@@ -240,20 +199,18 @@ export const usePublicFormStore = defineStore('publicForm', () => {
   function reset() {
     form.value = null
     questions.value = []
+    selectedQuestionIds.value = null
     currentIndex.value = 0
     Object.keys(answers).forEach(k => delete answers[k])
     Object.keys(errors).forEach(k => delete errors[k])
-    startTime.value = null
-    timeRemaining.value = null
     examResult.value = null
     showResults.value = false
     odooValidated.value = false
     odooStudent.value = null
+    stopTimer()
+    timeRemaining.value = null
+    startTime.value = null
     error.value = null
-    
-    if (timerInterval.value) {
-      clearInterval(timerInterval.value)
-    }
   }
 
   return {
@@ -272,20 +229,20 @@ export const usePublicFormStore = defineStore('publicForm', () => {
     odooValidated,
     odooStudent,
     validatingEmail,
+    selectedQuestionIds,
+    
     // Getters
     isExam,
     requiresOdooValidation,
     currentQuestion,
     progress,
     canSubmit,
+    questionBankInfo,
+    
     // Actions
-    validateStudent,
     loadForm,
-    startExam,
-    submitExam,
-    goToQuestion,
-    nextQuestion,
-    prevQuestion,
-    reset
+    submitResponses,
+    reset,
+    stopTimer
   }
 })
