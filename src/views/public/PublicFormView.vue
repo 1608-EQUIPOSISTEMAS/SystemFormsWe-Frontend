@@ -736,6 +736,7 @@ async function submitForm(auto = false) {
     if (isExam.value && res.data?.data) {
       const data = res.data.data
       examResult.value = {
+            response_uuid: data.response_uuid,
         percentage: data.score || 0,
         passed: data.passed,
         correct_count: data.correct_count || 0,
@@ -772,9 +773,27 @@ function validateAll() {
 function handleFileChange(e, qid) { const f = e.target.files[0]; if (f) answers[qid] = f.name }
 
 async function generateQR() {
-  if (!examResult.value?.odoo?.pdf_url || !qrCanvas.value) return
-  try { await QRCode.toCanvas(qrCanvas.value, examResult.value.odoo.pdf_url, { width: 120, margin: 2, color: { dark: '#000F5A', light: '#ffffff' } }) }
-  catch (err) { console.error('QR error:', err) }
+  if (!examResult.value?.odoo?.certificate_id || !qrCanvas.value) return
+  
+  try {
+    // URL pública de nuestro backend (no de Odoo)
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+    const responseUuid = examResult.value.response_uuid // Necesitas guardar esto
+    
+    // Si tienes response_uuid, usar nuestra URL proxy
+    // Si no, crear URL de verificación
+    const qrUrl = responseUuid 
+      ? `${API_URL}/public/certificate/${responseUuid}`
+      : `${window.location.origin}/verificar/${examResult.value.odoo.certificate_id}`
+    
+    await QRCode.toCanvas(qrCanvas.value, qrUrl, { 
+      width: 120, 
+      margin: 2, 
+      color: { dark: '#000F5A', light: '#ffffff' } 
+    })
+  } catch (err) { 
+    console.error('QR error:', err) 
+  }
 }
 
 function downloadTicket() {
