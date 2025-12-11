@@ -169,9 +169,6 @@ function goBack() {
           <button @click="goToLinkedIn" class="btn btn-primary">
             Ver en LinkedIn
           </button>
-          <button @click="goBack" class="btn btn-outline">
-            Volver al examen
-          </button>
         </div>
       </template>
       
