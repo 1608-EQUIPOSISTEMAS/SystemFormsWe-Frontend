@@ -18,32 +18,128 @@
     </div>
 
     <template v-else-if="form">
-      <!-- PASO 0: VALIDACIÓN ODOO -->
-      <div v-if="requiresOdooValidation && !odooValidated && !started" class="validation-screen">
-        <div class="validation-card">
-          <img src="@/assets/images/weonline.png" alt="WE Online" class="brand-logo" />
-          <h1 class="validation-title">{{ form.title }}</h1>
-          <p class="validation-subtitle">Ingresa tu correo registrado en el Intranet</p>
-          <form @submit.prevent="validateOdooEmail" class="validation-form">
-            <div class="input-group">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
-              </svg>
-              <input type="email" v-model="odooEmail" placeholder="tucorreo@ejemplo.com" :disabled="validatingOdoo" required autofocus />
-            </div>
-            <div v-if="odooError" class="error-msg">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-              </svg>
-              {{ odooError }}
-            </div>
-            <button type="submit" class="btn-primary" :disabled="validatingOdoo || !odooEmail">
-              <span v-if="validatingOdoo" class="btn-loader"></span>
-              {{ validatingOdoo ? 'Verificando...' : 'Continuar' }}
-            </button>
-          </form>
+    <!-- PASO 0: VALIDACIÓN ODOO - SPLIT SCREEN -->
+    <div v-if="requiresOdooValidation && !odooValidated && !started" class="validation-screen">
+  
+  <!-- LADO IZQUIERDO: BRANDING (Solo Desktop) -->
+  <div class="validation-brand">
+    <div class="brand-content">
+      <div class="brand-logo-wrapper">
+        <img src="@/assets/images/weonline.png" alt="WE Online" class="brand-logo" />
+      </div>
+      
+      <h1 class="brand-title">{{ form.title }}</h1>
+      <p v-if="form.description" class="brand-description">{{ form.description }}</p>
+      
+      <div v-if="isExam" class="brand-chips">
+        <div class="brand-chip" v-if="form.time_limit_minutes">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span>{{ form.time_limit_minutes }} minutos</span>
+        </div>
+        <div class="brand-chip">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          <span>{{ questions.length }} preguntas</span>
         </div>
       </div>
+      
+      <div class="brand-decoration">
+        <div class="decoration-circle circle-1"></div>
+        <div class="decoration-circle circle-2"></div>
+        <div class="decoration-circle circle-3"></div>
+      </div>
+    </div>
+    
+    <div class="brand-footer">
+      <span>Educación Ejecutiva</span>
+    </div>
+  </div>
+  
+  <!-- LADO DERECHO: FORMULARIO -->
+  <div class="validation-form-side">
+    <div class="validation-form-container">
+      
+      <!-- Header móvil con gradiente (Solo Mobile/Tablet) -->
+      <div class="mobile-header">
+        <img src="@/assets/images/weonline.png" alt="WE Online" class="mobile-logo" />
+        <h2 class="mobile-title">{{ form.title }}</h2>
+      </div>
+      
+      <!-- Contenido del formulario -->
+      <div class="mobile-form-content">
+        <!-- Icono -->
+        <div class="form-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            <circle cx="12" cy="16" r="1"/>
+          </svg>
+        </div>
+        
+        <!-- Título y subtítulo -->
+        <h2 class="form-title">Verificar acceso</h2>
+        <p class="form-subtitle">Ingresa el correo registrado en el Campus Virtual para continuar</p>
+        
+        <!-- Formulario -->
+        <form @submit.prevent="validateOdooEmail" class="validation-form">
+          <div class="input-wrapper">
+            <label class="input-label">Correo electrónico</label>
+            <div class="input-field" :class="{ 'has-error': odooError, 'is-focused': emailFocused }">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              <input 
+                type="email" 
+                v-model="odooEmail" 
+                placeholder="tucorreo@ejemplo.com" 
+                :disabled="validatingOdoo" 
+                required 
+                autofocus
+                @focus="emailFocused = true"
+                @blur="emailFocused = false"
+              />
+            </div>
+          </div>
+          
+          <!-- Mensaje de error -->
+          <div v-if="odooError" class="error-message">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>{{ odooError }}</span>
+          </div>
+          
+          <!-- Botón submit -->
+          <button type="submit" class="submit-btn" :disabled="validatingOdoo || !odooEmail">
+            <span v-if="validatingOdoo" class="btn-loader"></span>
+            <span class="btn-text">{{ validatingOdoo ? 'Verificando...' : 'Continuar' }}</span>
+            <svg v-if="!validatingOdoo" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </button>
+        </form>
+        
+        <!-- Ayuda -->
+        <div class="form-help">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>¿Problemas para acceder? Contacta a soporte</span>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
 
       <!-- PASO 1: BIENVENIDA -->
       <div v-else-if="!started && form.welcome_message" class="welcome-screen">
@@ -97,8 +193,9 @@
         </div>
       </div>
 
-      <!-- PASO 2: QUIZ / EXAMEN - Layout 70/30 en PC -->
+      <!-- PASO 2: QUIZ / EXAMEN -->
       <div v-else-if="!submitted" class="quiz-screen">
+        <!-- Quiz content (sin cambios) -->
         <header class="quiz-header">
           <div class="header-left">
             <img src="@/assets/images/weonline.png" alt="WE" class="header-logo" />
@@ -179,12 +276,11 @@
               <button @click="goBack" class="nav-btn" :disabled="currentIndex === 0">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Anterior
               </button>
-              <button @click="nextQuestion" class="nav-btn primary" :class="{ finish: isLastQuestion }" :disabled="submitting">
-                <span v-if="submitting">Enviando...</span>
-                <span v-else-if="isLastQuestion">Finalizar examen</span>
+              <button @click="nextQuestion" class="nav-btn primary" :class="{ finish: isLastQuestion }">
+                <span v-if="isLastQuestion">Finalizar {{ isExam ? 'examen' : 'encuesta' }}</span>
                 <span v-else>Siguiente</span>
-                <svg v-if="!submitting && !isLastQuestion" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-                <svg v-if="!submitting && isLastQuestion" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <svg v-if="!isLastQuestion" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                <svg v-if="isLastQuestion" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               </button>
             </div>
           </main>
@@ -211,6 +307,7 @@
 
       <!-- Survey Result (no examen) -->
       <div v-else-if="!isExam" class="survey-result-screen">
+        <!-- Sin cambios -->
         <div class="survey-result-card">
           <div class="survey-logo-wrapper"><img src="@/assets/images/weonline.png" alt="WE Online" class="survey-result-logo" /></div>
           <div class="success-badge">
@@ -249,7 +346,8 @@
               <button @click="scrollToTop" class="mobile-nav-btn back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>Volver arriba</button>
             </div>
 
-            <div class="score-card" :class="{ passed: examResult?.passed }">
+            <!-- Score Card con tour-target -->
+            <div class="score-card" :class="{ passed: examResult?.passed, 'tour-highlight': tourStep === 0 }" ref="scoreCardRef" data-tour="score">
               <div class="score-status">
                 <div class="status-icon">
                   <svg v-if="examResult?.passed" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -278,7 +376,8 @@
 
             <div class="section-divider"><span class="divider-line"></span><span class="divider-text">Revisión</span><span class="divider-line"></span></div>
 
-            <div v-if="isExam && examResult?.details?.length" class="review-section" ref="reviewSection">
+            <!-- Review Section con tour-target -->
+            <div v-if="isExam && examResult?.details?.length" class="review-section" :class="{ 'tour-highlight': tourStep === 1 }" ref="reviewSection" data-tour="review">
               <div class="review-header">
                 <h3>Revisión de respuestas</h3>
                 <div class="review-summary"><span class="summary-correct">{{ examResult.correct_count }} correctas</span><span class="summary-wrong">{{ examResult.total_questions - examResult.correct_count }} incorrectas</span></div>
@@ -323,28 +422,97 @@
                 <div class="detail-row" v-if="examResult?.passing_score"><span class="detail-label">Nota mínima</span><span class="detail-value">11 ({{ examResult.passing_score }}%)</span></div>
               </div>
             </div>
-            <div v-if="examResult?.odoo?.pdf_url" class="sidebar-certificate">
+            
+            <!-- QR Section con tour-target -->
+            <div v-if="examResult?.odoo?.pdf_url" class="sidebar-certificate" :class="{ 'tour-highlight': tourStep === 2 }" ref="qrSectionRef" data-tour="qr">
               <div class="cert-header"><span class="cert-icon">🎓</span><div class="cert-text"><strong>¡Certificado disponible!</strong><span>Escanea el QR o descarga</span></div></div>
               <div class="cert-qr"><canvas ref="qrCanvas" class="qr-canvas"></canvas></div>
             </div>
+            
+            <!-- Actions con tour-targets -->
             <div class="sidebar-actions">
-              <a v-if="examResult?.odoo?.pdf_url" :href="examResult.odoo.pdf_url" target="_blank" class="action-btn pdf"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Certificado oficial (PDF)</a>
-              <button @click="downloadTicket" class="action-btn download"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Descargar constancia</button>
-              <button @click="openLinkedInModal" class="action-btn linkedin"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>Compartir en LinkedIn</button>
+              <a v-if="examResult?.odoo?.pdf_url" :href="examResult.odoo.pdf_url" target="_blank" class="action-btn pdf" :class="{ 'tour-highlight': tourStep === 3 }" ref="pdfBtnRef" data-tour="pdf">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Certificado oficial (PDF)
+              </a>
+              <button @click="downloadTicket" class="action-btn download" :class="{ 'tour-highlight': tourStep === 4 }" ref="ticketBtnRef" data-tour="ticket">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Descargar constancia de Examen
+              </button>
+              <button @click="openLinkedInModal" class="action-btn linkedin" :class="{ 'tour-highlight': tourStep === 5 }" ref="linkedinBtnRef" data-tour="linkedin">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>Compartir en LinkedIn
+              </button>
             </div>
-            <div class="sidebar-footer"><span>Educación Ejecutiva</span></div>
+            <div class="sidebar-footer"><span>W|E Educación Ejecutiva</span></div>
           </div>
         </div>
       </div>
     </template>
 
     <!-- ═══════════════════════════════════════════════════════════
-         MODAL LINKEDIN
+         MODAL DE PROCESAMIENTO
          ═══════════════════════════════════════════════════════════ -->
+    <Teleport to="body">
+      <div v-if="submitting" class="processing-overlay">
+        <div class="processing-modal">
+          <div class="processing-video-container">
+            <video ref="processingVideo" autoplay loop muted playsinline class="processing-video">
+              <source :src="processingVideoSrc" type="video/mp4">
+            </video>
+          </div>
+          <div class="processing-content">
+            <h2 class="processing-title">{{ isExam ? '¡Estamos corrigiendo tu examen!' : '¡Procesando tus respuestas!' }}</h2>
+            <p class="processing-text">{{ isExam ? 'Espera un momento mientras evaluamos tus respuestas...' : 'Espera un momento mientras guardamos tu información...' }}</p>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         TOUR MODAL
+         ═══════════════════════════════════════════════════════════ -->
+    <Teleport to="body">
+      <div v-if="showTour && submitted && isExam" class="tour-overlay">
+        <div class="tour-spotlight" :style="spotlightStyle"></div>
+        <div class="tour-modal" :style="tourModalStyle">
+          <button @click="closeTour" class="tour-close">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <div class="tour-header">
+            <div class="tour-icon">
+              <component :is="tourSteps[tourStep]?.icon || 'span'" />
+            </div>
+            <h3 class="tour-title">{{ tourSteps[tourStep]?.title }}</h3>
+          </div>
+          <p class="tour-description">{{ tourSteps[tourStep]?.description }}</p>
+          <p class="tour-hint">Puedes repetir este tutorial en cualquier momento haciendo click en el botón de esta caja.</p>
+          <div class="tour-footer">
+            <div class="tour-dots">
+              <span v-for="(step, idx) in tourSteps" :key="idx" class="tour-dot" :class="{ active: idx === tourStep, completed: idx < tourStep }"></span>
+            </div>
+            <div class="tour-actions">
+              <button v-if="tourStep > 0" @click="prevTourStep" class="tour-btn secondary">Anterior</button>
+              <button @click="nextTourStep" class="tour-btn primary">
+                {{ tourStep === tourSteps.length - 1 ? 'Finalizar' : 'Siguiente' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Botón flotante para reiniciar tour -->
+    <Teleport to="body">
+      <button v-if="submitted && isExam && !showTour" @click="startTour" class="tour-restart-btn" title="Ver tutorial">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <span>Tour virtual</span>
+      </button>
+    </Teleport>
+
+    <!-- MODAL LINKEDIN -->
     <Teleport to="body">
       <div v-if="showLinkedInModal" class="linkedin-modal-overlay" @click.self="closeLinkedInModal">
         <div class="linkedin-modal">
-          <!-- Header -->
           <div class="linkedin-modal-header">
             <div class="linkedin-header-left">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="#0077b5"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
@@ -354,10 +522,7 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
-
-          <!-- Body -->
           <div class="linkedin-modal-body">
-            <!-- Preview Card -->
             <div class="linkedin-preview-card">
               <div class="preview-header">
                 <div class="preview-avatar">{{ odooStudent?.full_name?.charAt(0) || 'U' }}</div>
@@ -376,8 +541,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- Text Editor -->
             <div class="linkedin-editor">
               <label class="editor-label">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -388,15 +551,11 @@
                 <span class="char-count" :class="{ warning: linkedInPostText.length > 2800 }">{{ linkedInPostText.length }} / 3000</span>
               </div>
             </div>
-
-            <!-- Info -->
             <div class="linkedin-info">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-              <span>Se incluirá automáticamente tu nota del examen y tambien tu certificado conseguido</span>
+              <span>Se incluirá automáticamente tu nota del examen y también tu certificado conseguido</span>
             </div>
           </div>
-
-          <!-- Footer -->
           <div class="linkedin-modal-footer">
             <button @click="closeLinkedInModal" class="linkedin-btn-cancel">Cancelar</button>
             <button @click="confirmLinkedInShare" class="linkedin-btn-share" :disabled="linkedInLoading || linkedInPostText.length > 3000">
@@ -412,12 +571,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, reactive, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, reactive, watch, nextTick, h } from 'vue'
 import { useRoute } from 'vue-router'
 import QRCode from 'qrcode'
 import html2canvas from 'html2canvas'
 import formService from '@/services/form.service'
 import responseService from '@/services/response.service'
+import processingVideoSrc from '@/assets/images/videosparky.mp4'
 
 const route = useRoute()
 
@@ -437,6 +597,7 @@ const timeRemaining = ref(0)
 const timerInterval = ref(null)
 const reviewIndex = ref(0)
 const showNavPanel = ref(false)
+const emailFocused = ref(false)
 
 // Odoo State
 const requiresOdooValidation = ref(false)
@@ -451,10 +612,99 @@ const showLinkedInModal = ref(false)
 const linkedInPostText = ref('')
 const linkedInLoading = ref(false)
 
+// Tour State
+const showTour = ref(false)
+const tourStep = ref(0)
+const spotlightStyle = ref({})
+const tourModalStyle = ref({})
+
 // Refs
 const qrCanvas = ref(null)
 const reviewSection = ref(null)
 const sidebarSection = ref(null)
+const processingVideo = ref(null)
+const scoreCardRef = ref(null)
+const qrSectionRef = ref(null)
+const pdfBtnRef = ref(null)
+const ticketBtnRef = ref(null)
+const linkedinBtnRef = ref(null)
+
+// Tour Steps Definition
+const tourSteps = computed(() => {
+  const steps = [
+    {
+      target: 'score',
+      ref: scoreCardRef,
+      title: '📊 Tu Resultado',
+      description: 'Aquí puedes ver tu nota final, el porcentaje obtenido y si aprobaste o no el examen.',
+      icon: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
+        h('path', { d: 'M22 11.08V12a10 10 0 1 1-5.93-9.14' }),
+        h('polyline', { points: '22 4 12 14.01 9 11.01' })
+      ])
+    },
+    {
+      target: 'review',
+      ref: reviewSection,
+      title: '📝 Revisión de Respuestas',
+      description: 'Revisa cada pregunta, tu respuesta y la respuesta correcta. Usa los botones numerados para navegar.',
+      icon: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
+        h('path', { d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' }),
+        h('polyline', { points: '14 2 14 8 20 8' }),
+        h('line', { x1: 16, y1: 13, x2: 8, y2: 13 }),
+        h('line', { x1: 16, y1: 17, x2: 8, y2: 17 })
+      ])
+    }
+  ]
+  
+  if (examResult.value?.odoo?.pdf_url) {
+    steps.push({
+      target: 'qr',
+      ref: qrSectionRef,
+      title: '📱 Código QR',
+      description: 'Escanea este código QR con tu celular para acceder directamente a tu certificado digital.',
+      icon: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
+        h('rect', { x: 3, y: 3, width: 7, height: 7 }),
+        h('rect', { x: 14, y: 3, width: 7, height: 7 }),
+        h('rect', { x: 14, y: 14, width: 7, height: 7 }),
+        h('rect', { x: 3, y: 14, width: 7, height: 7 })
+      ])
+    })
+    steps.push({
+      target: 'pdf',
+      ref: pdfBtnRef,
+      title: '📄 Certificado Oficial',
+      description: 'Descarga tu certificado oficial en formato PDF. Este documento tiene validez institucional.',
+      icon: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
+        h('path', { d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' }),
+        h('polyline', { points: '14 2 14 8 20 8' })
+      ])
+    })
+  }
+  
+  steps.push({
+    target: 'ticket',
+    ref: ticketBtnRef,
+    title: '🎫 Constancia de Examen',
+    description: 'Imprime o guarda tu constancia tipo ticket con el resumen de tu evaluación.',
+    icon: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2 }, [
+      h('path', { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' }),
+      h('polyline', { points: '7 10 12 15 17 10' }),
+      h('line', { x1: 12, y1: 15, x2: 12, y2: 3 })
+    ])
+  })
+  
+  steps.push({
+    target: 'linkedin',
+    ref: linkedinBtnRef,
+    title: '💼 Compartir en LinkedIn',
+    description: '¡Comparte tu logro con tu red profesional! Publicaremos tu resultado junto con tu certificado.',
+    icon: () => h('svg', { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'currentColor' }, [
+      h('path', { d: 'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z' })
+      ])
+  })
+  
+  return steps
+})
 
 // Computed
 const isExam = computed(() => form.value?.form_type === 'EXAM')
@@ -487,6 +737,116 @@ const formattedTime = computed(() => {
   const m = Math.floor(timeRemaining.value / 60)
   const s = timeRemaining.value % 60
   return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`
+})
+
+// Tour Methods
+function startTour() {
+  tourStep.value = 0
+  showTour.value = true
+  updateTourPosition()
+}
+
+function closeTour() {
+  showTour.value = false
+}
+
+function nextTourStep() {
+  if (tourStep.value < tourSteps.value.length - 1) {
+    tourStep.value++
+    updateTourPosition()
+  } else {
+    closeTour()
+  }
+}
+
+function prevTourStep() {
+  if (tourStep.value > 0) {
+    tourStep.value--
+    updateTourPosition()
+  }
+}
+
+function updateTourPosition() {
+  nextTick(() => {
+    const step = tourSteps.value[tourStep.value]
+    if (!step?.ref?.value) {
+      // Si no hay ref, posicionar modal en el centro
+      tourModalStyle.value = {
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)'
+      }
+      spotlightStyle.value = { display: 'none' }
+      return
+    }
+    
+    const el = step.ref.value.$el || step.ref.value
+    
+    // Scroll element into view
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    
+    setTimeout(() => {
+      const rect = el.getBoundingClientRect()
+      const padding = 16
+      
+      // Posicionar spotlight
+      spotlightStyle.value = {
+        display: 'block',
+        top: `${rect.top - padding}px`,
+        left: `${rect.left - padding}px`,
+        width: `${rect.width + padding * 2}px`,
+        height: `${rect.height + padding * 2}px`
+      }
+      
+      // Posicionar modal
+      const modalWidth = Math.min(400, window.innerWidth - 32)
+      const modalHeight = 320
+      const gap = 16
+      
+      let modalTop, modalLeft
+      
+      // Determinar mejor posición para el modal
+      const spaceBelow = window.innerHeight - rect.bottom
+      const spaceAbove = rect.top
+      const spaceRight = window.innerWidth - rect.right
+      const spaceLeft = rect.left
+      
+      // Preferir abajo, luego arriba, luego lado
+      if (spaceBelow >= modalHeight + gap) {
+        modalTop = rect.bottom + gap
+        modalLeft = rect.left + (rect.width / 2) - (modalWidth / 2)
+      } else if (spaceAbove >= modalHeight + gap) {
+        modalTop = rect.top - modalHeight - gap
+        modalLeft = rect.left + (rect.width / 2) - (modalWidth / 2)
+      } else if (spaceRight >= modalWidth + gap) {
+        modalTop = rect.top + (rect.height / 2) - (modalHeight / 2)
+        modalLeft = rect.right + gap
+      } else if (spaceLeft >= modalWidth + gap) {
+        modalTop = rect.top + (rect.height / 2) - (modalHeight / 2)
+        modalLeft = rect.left - modalWidth - gap
+      } else {
+        // Fallback: centro de pantalla
+        modalTop = window.innerHeight / 2 - modalHeight / 2
+        modalLeft = window.innerWidth / 2 - modalWidth / 2
+      }
+      
+      // Ajustar límites de pantalla
+      modalLeft = Math.max(16, Math.min(modalLeft, window.innerWidth - modalWidth - 16))
+      modalTop = Math.max(16, Math.min(modalTop, window.innerHeight - modalHeight - 16))
+      
+      tourModalStyle.value = {
+        top: `${modalTop}px`,
+        left: `${modalLeft}px`,
+        maxWidth: `${modalWidth}px`,
+        transform: 'none'
+      }
+    }, 400)
+  })
+}
+
+// Watch for tour step changes
+watch(tourStep, () => {
+  if (showTour.value) updateTourPosition()
 })
 
 // Methods
@@ -638,12 +998,19 @@ async function submitForm(auto = false) {
     }
     
     submitted.value = true
+    submitting.value = false
     await nextTick()
     generateQR()
+    
+    // Auto-start tour after 1 second
+    setTimeout(() => {
+      if (isExam.value) startTour()
+    }, 1000)
   } catch (e) {
     console.error('Error al enviar:', e)
+    submitting.value = false
     alert(auto ? 'Tiempo agotado. Error al enviar.' : 'Error al enviar respuestas.')
-  } finally { submitting.value = false }
+  }
 }
 
 function validateAll() {
@@ -681,10 +1048,7 @@ function downloadTicket() {
   setTimeout(() => win.print(), 300)
 }
 
-// ═══════════════════════════════════════════════════════════════
-// LINKEDIN MODAL FUNCTIONS
-// ═══════════════════════════════════════════════════════════════
-
+// LinkedIn Functions
 function generateDefaultLinkedInText() {
   const result = examResult.value
   const student = odooStudent.value
@@ -715,20 +1079,13 @@ function closeLinkedInModal() {
 
 async function confirmLinkedInShare() {
   linkedInLoading.value = true
-  
   try {
-    // Generar imagen
     const imageBlob = await generateCertificateImage()
-    if (!imageBlob) {
-      alert('Error al generar imagen')
-      linkedInLoading.value = false
-      return
-    }
+    if (!imageBlob) { alert('Error al generar imagen'); linkedInLoading.value = false; return }
     
     const result = examResult.value
     const student = odooStudent.value
     
-    // Guardar datos en localStorage
     const examData = {
       title: form.value.title,
       percentage: result?.percentage || 0,
@@ -747,30 +1104,18 @@ async function confirmLinkedInShare() {
     localStorage.setItem('linkedin_exam_data', JSON.stringify(examData))
     localStorage.setItem('linkedin_post_text', linkedInPostText.value)
     
-    // Convertir imagen a base64
     const reader = new FileReader()
     reader.readAsDataURL(imageBlob)
     reader.onloadend = () => {
       localStorage.setItem('linkedin_certificate_image', reader.result.split(',')[1])
-      
-      // Redirigir a LinkedIn OAuth
       const state = btoa(JSON.stringify({ formUuid: form.value.uuid, ts: Date.now() }))
       const clientId = '78grbv4vc7hu8f'
       const redirectUri = encodeURIComponent(`${window.location.origin}/linkedin/callback`)
       const scope = encodeURIComponent('openid profile email w_member_social')
-      
       window.location.href = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${encodeURIComponent(state)}&scope=${scope}`
     }
-    
-    reader.onerror = () => {
-      alert('Error al procesar imagen')
-      linkedInLoading.value = false
-    }
-  } catch (err) {
-    console.error('Error LinkedIn:', err)
-    alert('Error al preparar publicación')
-    linkedInLoading.value = false
-  }
+    reader.onerror = () => { alert('Error al procesar imagen'); linkedInLoading.value = false }
+  } catch (err) { console.error('Error LinkedIn:', err); alert('Error al preparar publicación'); linkedInLoading.value = false }
 }
 
 async function generateCertificateImage() {
@@ -789,10 +1134,7 @@ async function generateCertificateImage() {
     const canvas = await html2canvas(tempDiv.firstElementChild, { scale: 2, backgroundColor: null, logging: false })
     document.body.removeChild(tempDiv)
     return new Promise(resolve => canvas.toBlob(blob => resolve(blob), 'image/png', 1.0))
-  } catch (err) {
-    document.body.removeChild(tempDiv)
-    return null
-  }
+  } catch (err) { document.body.removeChild(tempDiv); return null }
 }
 
 onMounted(() => loadForm())
@@ -808,6 +1150,560 @@ watch(answers, () => {
 
 <style scoped>
 /* ═══════════════════════════════════════════════════════════════
+   PROCESSING MODAL STYLES
+   ═══════════════════════════════════════════════════════════════ */
+.processing-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 15, 90, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+/* ═══════════════════════════════════════════════════════════════
+   VALIDATION SCREEN - SPLIT LAYOUT (FULL HEIGHT)
+   ═══════════════════════════════════════════════════════════════ */
+
+.validation-screen {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  background: #ffffff;
+  padding: 0 !important; /* Override cualquier padding heredado */
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   LADO IZQUIERDO: BRANDING (FULL HEIGHT)
+   ───────────────────────────────────────────────────────────────── */
+
+.validation-brand {
+  display: none; /* Oculto en móvil */
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 0 0 55%;
+  max-width: 55%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: linear-gradient(135deg, #000F5A 0%, #001a7a 50%, #0499D5 100%);
+  padding: 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.brand-content {
+  position: relative;
+  z-index: 2;
+  max-width: 520px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.brand-logo-wrapper {
+  margin-bottom: 48px;
+}
+
+.brand-logo-wrapper .brand-logo {
+  height: 44px;
+  filter: brightness(0) invert(1);
+  margin-bottom: 0;
+}
+
+.brand-title {
+  font-size: 36px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.25;
+  margin: 0 0 20px;
+  letter-spacing: -0.5px;
+}
+
+.brand-description {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.7;
+  margin: 0 0 40px;
+  max-width: 440px;
+}
+
+.brand-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.brand-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.brand-chip svg {
+  opacity: 0.85;
+}
+
+/* Decoración de círculos */
+.brand-decoration {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.decoration-circle {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.circle-1 {
+  width: 400px;
+  height: 400px;
+  top: -100px;
+  right: -100px;
+  background: radial-gradient(circle, rgba(4, 153, 213, 0.15) 0%, transparent 70%);
+}
+
+.circle-2 {
+  width: 300px;
+  height: 300px;
+  bottom: 10%;
+  right: 20%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+}
+
+.circle-3 {
+  width: 200px;
+  height: 200px;
+  bottom: -50px;
+  left: 10%;
+  background: radial-gradient(circle, rgba(4, 153, 213, 0.1) 0%, transparent 70%);
+}
+
+.brand-footer {
+  position: relative;
+  z-index: 2;
+  padding-top: 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: auto;
+}
+
+.brand-footer span {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.5px;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   LADO DERECHO: FORMULARIO (FULL HEIGHT)
+   ───────────────────────────────────────────────────────────────── */
+
+.validation-form-side {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  background: #ffffff;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.validation-form-container {
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Header móvil */
+.mobile-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.mobile-logo {
+  height: 36px;
+  margin-bottom: 20px;
+}
+
+.mobile-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #000F5A;
+  line-height: 1.35;
+  margin: 0;
+}
+
+/* Icono de formulario */
+.form-icon {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, rgba(4, 153, 213, 0.1) 0%, rgba(0, 15, 90, 0.08) 100%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0499D5;
+  margin-bottom: 28px;
+}
+
+.form-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 10px;
+  letter-spacing: -0.3px;
+}
+
+.form-subtitle {
+  font-size: 15px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 32px;
+}
+
+/* Formulario */
+.validation-form {
+  margin-bottom: 24px;
+}
+
+.input-wrapper {
+  margin-bottom: 20px;
+}
+
+.input-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.input-field {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.input-field svg {
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.input-field.is-focused {
+  background: #ffffff;
+  border-color: #0499D5;
+  box-shadow: 0 0 0 4px rgba(4, 153, 213, 0.1);
+}
+
+.input-field.is-focused svg {
+  color: #0499D5;
+}
+
+.input-field.has-error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.input-field.has-error svg {
+  color: #ef4444;
+}
+
+.input-field input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  color: #1a1a2e;
+  font-family: inherit;
+}
+
+.input-field input::placeholder {
+  color: #94a3b8;
+}
+
+.input-field input:disabled {
+  opacity: 0.6;
+}
+
+/* Error message */
+.error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.error-message svg {
+  color: #ef4444;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.error-message span {
+  font-size: 14px;
+  color: #dc2626;
+  line-height: 1.5;
+}
+
+/* Submit button */
+.submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 24px;
+  background: #000F5A;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #001a7a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 15, 90, 0.25);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.submit-btn .btn-loader {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Ayuda */
+.form-help {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.form-help svg {
+  flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   RESPONSIVE - VALIDATION SCREEN
+   ───────────────────────────────────────────────────────────────── */
+
+/* Tablet */
+@media (min-width: 768px) {
+  .validation-form-side {
+    padding: 48px 40px;
+  }
+  
+  .mobile-header {
+    display: none;
+  }
+  
+  .form-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 18px;
+  }
+  
+  .form-icon svg {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .form-title {
+    font-size: 28px;
+  }
+}
+
+/* Desktop - Mostrar lado izquierdo */
+@media (min-width: 1024px) {
+  .validation-screen {
+    padding: 0 !important;
+  }
+  
+  .validation-brand {
+    display: flex;
+  }
+  
+  .mobile-header {
+    display: none;
+  }
+  
+  .validation-form-side {
+    flex: 0 0 45%;
+    max-width: 45%;
+    padding: 48px 56px;
+  }
+  
+  .validation-form-container {
+    max-width: 380px;
+  }
+}
+
+/* Large Desktop */
+@media (min-width: 1280px) {
+  .validation-brand {
+    padding: 56px 64px;
+  }
+  
+  .brand-title {
+    font-size: 40px;
+  }
+  
+  .brand-description {
+    font-size: 17px;
+  }
+  
+  .validation-form-side {
+    padding: 56px 72px;
+  }
+  
+  .validation-form-container {
+    max-width: 400px;
+  }
+}
+
+/* Extra Large */
+@media (min-width: 1440px) {
+  .validation-brand {
+    flex: 0 0 58%;
+    max-width: 58%;
+    padding: 64px 80px;
+  }
+  
+  .brand-content {
+    max-width: 580px;
+  }
+  
+  .brand-title {
+    font-size: 44px;
+  }
+  
+  .validation-form-side {
+    flex: 0 0 42%;
+    max-width: 42%;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.processing-modal {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 40px 32px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  animation: modalSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlide {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.processing-video-container {
+  width: 180px;
+  height: 180px;
+  margin: 0 auto 24px;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #f0f4f8;
+  box-shadow: 0 8px 24px rgba(0, 15, 90, 0.15);
+}
+
+.processing-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.processing-content {
+  margin-top: 8px;
+}
+
+.processing-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #000F5A;
+  margin: 0 0 10px;
+  line-height: 1.3;
+}
+
+.processing-text {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+  .processing-modal {
+    padding: 32px 24px;
+    border-radius: 20px;
+    margin: 16px;
+  }
+  
+  .processing-video-container {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .processing-title {
+    font-size: 18px;
+  }
+  
+  .processing-text {
+    font-size: 13px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
    LINKEDIN MODAL STYLES
    ═══════════════════════════════════════════════════════════════ */
 .linkedin-modal-overlay {
@@ -820,12 +1716,6 @@ watch(answers, () => {
   justify-content: center;
   z-index: 9999;
   padding: 20px;
-  animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 .linkedin-modal {
@@ -838,12 +1728,6 @@ watch(answers, () => {
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .linkedin-modal-header {
@@ -875,7 +1759,6 @@ watch(answers, () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
 }
 
 .linkedin-close-btn:hover {
@@ -889,7 +1772,6 @@ watch(answers, () => {
   flex: 1;
 }
 
-/* Preview Card */
 .linkedin-preview-card {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -977,7 +1859,6 @@ watch(answers, () => {
   opacity: 0.9;
 }
 
-/* Editor */
 .linkedin-editor {
   margin-bottom: 16px;
 }
@@ -1002,7 +1883,6 @@ watch(answers, () => {
   color: #1a1a2e;
   resize: none;
   font-family: inherit;
-  transition: border-color 0.2s;
 }
 
 .editor-textarea:focus {
@@ -1026,7 +1906,6 @@ watch(answers, () => {
   font-weight: 600;
 }
 
-/* Info */
 .linkedin-info {
   display: flex;
   align-items: flex-start;
@@ -1043,7 +1922,6 @@ watch(answers, () => {
   margin-top: 1px;
 }
 
-/* Footer */
 .linkedin-modal-footer {
   display: flex;
   align-items: center;
@@ -1063,7 +1941,6 @@ watch(answers, () => {
   font-weight: 600;
   color: #64748b;
   cursor: pointer;
-  transition: all 0.15s;
 }
 
 .linkedin-btn-cancel:hover {
@@ -1083,7 +1960,6 @@ watch(answers, () => {
   font-weight: 600;
   color: white;
   cursor: pointer;
-  transition: all 0.15s;
 }
 
 .linkedin-btn-share:hover:not(:disabled) {
@@ -1095,51 +1971,9 @@ watch(answers, () => {
   cursor: not-allowed;
 }
 
-.linkedin-btn-share .btn-loader {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-/* Responsive */
-@media (max-width: 560px) {
-  .linkedin-modal {
-    max-height: 100vh;
-    border-radius: 16px 16px 0 0;
-    margin-top: auto;
-  }
-  
-  .linkedin-modal-body {
-    padding: 16px;
-  }
-  
-  .preview-image {
-    padding: 20px 16px;
-  }
-  
-  .placeholder-value {
-    font-size: 28px;
-  }
-  
-  .linkedin-modal-footer {
-    flex-direction: column;
-  }
-  
-  .linkedin-btn-cancel,
-  .linkedin-btn-share {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
 /* ═══════════════════════════════════════════════════════════════
-   REST OF STYLES (unchanged)
+   SURVEY RESULT STYLES
    ═══════════════════════════════════════════════════════════════ */
-
-/* Survey Result Screen */
 .survey-result-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); position: relative; overflow: hidden; }
 .survey-result-screen::before { content: ''; position: absolute; top: -50%; right: -20%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(4, 153, 213, 0.08) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
 .survey-result-screen::after { content: ''; position: absolute; bottom: -30%; left: -10%; width: 400px; height: 400px; background: radial-gradient(circle, rgba(0, 15, 90, 0.06) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
@@ -1167,36 +2001,19 @@ watch(answers, () => {
 .info-pill { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; color: #64748b; }
 .info-pill svg { color: #94a3b8; flex-shrink: 0; }
 .survey-divider { height: 1px; background: linear-gradient(90deg, transparent, #e2e8f0, transparent); margin-bottom: 28px; }
-.btn-survey-home { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px 24px; background: #ffffff; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 15px; font-weight: 600; color: #1a1a2e; cursor: pointer; transition: all 0.2s ease; }
+.btn-survey-home { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px 24px; background: #ffffff; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 15px; font-weight: 600; color: #1a1a2e; cursor: pointer; }
 .btn-survey-home:hover { background: #f8fafc; border-color: #0499D5; color: #0499D5; }
-.btn-survey-home:active { transform: scale(0.98); }
-.btn-survey-home svg { transition: transform 0.2s ease; }
-.btn-survey-home:hover svg { transform: translateY(-1px); }
 .survey-footer-text { margin: 20px 0 0; font-size: 12px; color: #94a3b8; }
 
-@media (max-width: 520px) {
-  .survey-result-screen { padding: 16px; align-items: flex-start; padding-top: 40px; }
-  .survey-result-card { padding: 36px 24px; border-radius: 20px; }
-  .survey-result-logo { height: 32px; }
-  .success-badge { width: 70px; height: 70px; }
-  .success-icon-wrapper svg { width: 28px; height: 28px; }
-  .survey-result-title { font-size: 20px; }
-  .survey-result-message { font-size: 14px; }
-  .survey-form-badge { padding: 8px 14px; }
-  .survey-form-badge span { font-size: 12px; max-width: 200px; }
-  .info-pill { padding: 6px 12px; font-size: 12px; }
-  .btn-survey-home { padding: 12px 20px; font-size: 14px; }
-}
-
-/* Variables */
+/* ═══════════════════════════════════════════════════════════════
+   CORE STYLES
+   ═══════════════════════════════════════════════════════════════ */
 .form-view { --blue: #000F5A; --celeste: #0499D5; --gray: #EEEEEE; --gray-light: #F8F9FA; --white: #FFFFFF; --text: #1a1a2e; --text-light: #64748b; --text-muted: #94a3b8; --success: #10b981; --danger: #ef4444; --warning: #f59e0b; --border: #e2e8f0; --radius: 12px; --shadow: 0 4px 20px rgba(0, 15, 90, 0.08); min-height: 100vh; min-height: 100dvh; background: var(--white); font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: var(--text); }
 
-/* Common */
 .brand-logo { height: 36px; margin-bottom: 20px; }
 .btn-loader { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* State, Validation, Welcome */
 .state-screen { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; }
 .loader { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px; }
 .state-icon { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
@@ -1208,7 +2025,7 @@ watch(answers, () => {
 .validation-title, .welcome-title { font-size: 22px; font-weight: 700; margin: 0 0 8px; color: var(--blue); }
 .validation-subtitle, .welcome-desc { font-size: 14px; color: var(--text-light); margin: 0 0 24px; }
 .validation-form { text-align: left; }
-.input-group { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 2px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; transition: border-color 0.2s; }
+.input-group { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 2px solid var(--border); border-radius: var(--radius); margin-bottom: 16px; }
 .input-group:focus-within { border-color: var(--celeste); }
 .input-group svg { color: var(--text-muted); flex-shrink: 0; }
 .input-group input { flex: 1; border: none; outline: none; font-size: 15px; color: var(--text); background: transparent; }
@@ -1227,7 +2044,6 @@ watch(answers, () => {
 .btn-start { display: inline-flex; align-items: center; gap: 10px; padding: 16px 32px; background: var(--blue); color: white; border: none; border-radius: var(--radius); font-size: 16px; font-weight: 600; cursor: pointer; }
 .btn-start:hover { background: #001a7a; }
 
-/* Quiz Screen */
 .quiz-screen { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: var(--gray-light); }
 .quiz-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--white); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
 .header-left { display: flex; align-items: center; gap: 12px; }
@@ -1256,30 +2072,30 @@ watch(answers, () => {
 .question-text { font-size: 18px; font-weight: 600; line-height: 1.5; margin: 0 0 8px; color: var(--blue); }
 .question-help { font-size: 13px; color: var(--text-muted); margin: 0 0 20px; }
 .answer-container { margin-top: 20px; }
-.input-text, .input-textarea, .input-select { width: 100%; padding: 14px 16px; font-size: 15px; color: var(--text); background: var(--white); border: 2px solid var(--border); border-radius: 10px; transition: border-color 0.2s; }
+.input-text, .input-textarea, .input-select { width: 100%; padding: 14px 16px; font-size: 15px; color: var(--text); background: var(--white); border: 2px solid var(--border); border-radius: 10px; }
 .input-text:focus, .input-textarea:focus, .input-select:focus { outline: none; border-color: var(--celeste); }
 .input-textarea { resize: none; min-height: 100px; }
 .input-select { appearance: none; cursor: pointer; }
 .options-list { display: flex; flex-direction: column; gap: 10px; }
-.option-card { display: flex; align-items: center; gap: 14px; padding: 16px; background: var(--white); border: 2px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.15s; text-align: left; }
+.option-card { display: flex; align-items: center; gap: 14px; padding: 16px; background: var(--white); border: 2px solid var(--border); border-radius: 10px; cursor: pointer; text-align: left; }
 .option-card:hover { border-color: var(--celeste); background: rgba(4, 153, 213, 0.02); }
 .option-card.selected { border-color: var(--celeste); background: rgba(4, 153, 213, 0.06); }
-.option-marker { width: 24px; height: 24px; border: 2px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+.option-marker { width: 24px; height: 24px; border: 2px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .option-marker.checkbox { border-radius: 6px; }
 .option-card.selected .option-marker { background: var(--celeste); border-color: var(--celeste); color: white; }
 .option-label { flex: 1; font-size: 15px; color: var(--text); line-height: 1.4; }
 .tf-options { display: flex; gap: 12px; }
-.tf-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px; background: var(--white); border: 2px solid var(--border); border-radius: 10px; font-size: 15px; font-weight: 500; color: var(--text); cursor: pointer; transition: all 0.15s; }
+.tf-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px; background: var(--white); border: 2px solid var(--border); border-radius: 10px; font-size: 15px; font-weight: 500; color: var(--text); cursor: pointer; }
 .tf-btn:hover { border-color: var(--celeste); }
 .tf-btn.selected { border-color: var(--celeste); background: rgba(4, 153, 213, 0.06); }
 .tf-marker { width: 32px; height: 32px; background: var(--gray); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: var(--text-light); }
 .tf-btn.selected .tf-marker { background: var(--celeste); color: white; }
 .rating-container { display: flex; justify-content: center; gap: 8px; }
-.star { background: none; border: none; padding: 4px; color: var(--border); cursor: pointer; transition: all 0.15s; }
+.star { background: none; border: none; padding: 4px; color: var(--border); cursor: pointer; }
 .star:hover, .star.active { color: #fbbf24; transform: scale(1.1); }
 .scale-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
 .scale-buttons { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
-.scale-btn { width: 40px; height: 40px; border: 2px solid var(--border); border-radius: 8px; background: var(--white); font-size: 13px; font-weight: 600; color: var(--text-light); cursor: pointer; transition: all 0.15s; }
+.scale-btn { width: 40px; height: 40px; border: 2px solid var(--border); border-radius: 8px; background: var(--white); font-size: 13px; font-weight: 600; color: var(--text-light); cursor: pointer; }
 .scale-btn:hover { border-color: var(--celeste); color: var(--celeste); }
 .scale-btn.active { background: var(--celeste); border-color: var(--celeste); color: white; }
 .file-upload { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 32px; border: 2px dashed var(--border); border-radius: 10px; color: var(--text-muted); font-size: 14px; cursor: pointer; }
@@ -1287,7 +2103,7 @@ watch(answers, () => {
 .file-upload input { display: none; }
 .error-field { margin-top: 12px; font-size: 13px; color: var(--danger); }
 .question-nav { display: flex; gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
-.nav-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; border: 2px solid var(--border); border-radius: 10px; background: var(--white); font-size: 14px; font-weight: 600; color: var(--text-light); cursor: pointer; transition: all 0.15s; }
+.nav-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; border: 2px solid var(--border); border-radius: 10px; background: var(--white); font-size: 14px; font-weight: 600; color: var(--text-light); cursor: pointer; }
 .nav-btn:hover:not(:disabled) { border-color: var(--text-light); color: var(--text); }
 .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .nav-btn.primary { flex: 1; background: var(--celeste); border-color: var(--celeste); color: white; }
@@ -1305,14 +2121,13 @@ watch(answers, () => {
 .legend-item.answered .dot { background: var(--celeste); }
 .legend-item.pending .dot { background: var(--border); }
 .nav-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 20px; flex: 1; overflow-y: auto; align-content: start; }
-.nav-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: var(--gray); border: 2px solid transparent; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--text-light); cursor: pointer; transition: all 0.15s; }
+.nav-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: var(--gray); border: 2px solid transparent; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--text-light); cursor: pointer; }
 .nav-cell:hover { border-color: var(--celeste); }
 .nav-cell.active { border-color: var(--blue); background: var(--blue); color: white; }
 .nav-cell.answered { background: var(--celeste); color: white; }
 .nav-cell.answered.active { background: var(--blue); }
 .nav-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 150; }
 
-/* Result Screen */
 .result-screen { min-height: 100vh; min-height: 100dvh; background: var(--gray-light); }
 .result-layout { display: flex; flex-direction: column; min-height: 100vh; }
 .result-mobile-header { display: flex; justify-content: space-between; padding: 12px 16px; background: var(--white); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
@@ -1355,7 +2170,7 @@ watch(answers, () => {
 .summary-correct { color: var(--success); }
 .summary-wrong { color: var(--danger); }
 .review-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
-.pill { width: 36px; height: 36px; border: 2px solid var(--border); border-radius: 8px; background: var(--white); font-size: 13px; font-weight: 600; color: var(--text-light); cursor: pointer; transition: all 0.15s; }
+.pill { width: 36px; height: 36px; border: 2px solid var(--border); border-radius: 8px; background: var(--white); font-size: 13px; font-weight: 600; color: var(--text-light); cursor: pointer; }
 .pill:hover { border-color: var(--celeste); }
 .pill.active { border-color: var(--blue); background: var(--blue); color: white; }
 .pill.correct { border-color: var(--success); background: #ecfdf5; color: var(--success); }
@@ -1380,7 +2195,7 @@ watch(answers, () => {
 .review-answer.correct .answer-text { color: #065f46; font-weight: 500; }
 .review-answer.user.wrong .answer-text { color: var(--danger); }
 .review-nav { display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
-.review-arrow { width: 40px; height: 40px; border: 2px solid var(--border); border-radius: 10px; background: var(--white); color: var(--text-light); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; }
+.review-arrow { width: 40px; height: 40px; border: 2px solid var(--border); border-radius: 10px; background: var(--white); color: var(--text-light); display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .review-arrow:hover:not(:disabled) { border-color: var(--celeste); color: var(--celeste); }
 .review-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
 .review-counter { font-size: 14px; color: var(--text-light); font-weight: 500; }
@@ -1406,7 +2221,7 @@ watch(answers, () => {
 .cert-qr { text-align: center; }
 .qr-canvas { width: 120px !important; height: 120px !important; border-radius: 10px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 .sidebar-actions { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-.action-btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 20px; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+.action-btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 20px; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; }
 .action-btn.pdf { background: #dc2626; color: white; }
 .action-btn.pdf:hover { background: #b91c1c; }
 .action-btn.download { background: var(--blue); color: white; }
@@ -1416,7 +2231,6 @@ watch(answers, () => {
 .sidebar-footer { text-align: center; padding-top: 16px; border-top: 1px solid var(--border); }
 .sidebar-footer span { font-size: 12px; color: var(--text-muted); }
 
-/* Desktop */
 @media (min-width: 768px) {
   .header-title { display: block; }
   .quiz-main { padding: 40px 24px; }
@@ -1462,5 +2276,315 @@ watch(answers, () => {
   .quiz-main { padding: 40px 56px; }
   .quiz-sidebar { padding: 32px; }
   .section-divider { margin: 44px auto 36px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOUR STYLES - AGREGAR AL FINAL DEL STYLE
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Overlay oscuro */
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 15, 90, 0.85);
+  z-index: 9998;
+  animation: tour-fade-in 0.3s ease;
+}
+
+@keyframes tour-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Spotlight que ilumina el elemento */
+.tour-spotlight {
+  position: fixed;
+  border-radius: 16px;
+  z-index: 9999;
+  pointer-events: none;
+  box-shadow:   
+    0 0 0 4px #0499D5,
+    0 0 0 8px rgba(4, 153, 213, 0.3),
+    0 0 0 9999px rgba(0, 15, 90, 0.85);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tour-spotlight::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border: 3px solid #0499D5;
+  border-radius: 20px;
+  animation: tour-pulse-border 2s infinite;
+}
+
+.tour-spotlight::after {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border: 2px solid rgba(4, 153, 213, 0.4);
+  border-radius: 24px;
+  animation: tour-pulse-border 2s infinite 0.3s;
+}
+
+@keyframes tour-pulse-border {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.01); }
+}
+
+/* Modal del tour */
+.tour-modal {
+  position: fixed;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 28px;
+  width: calc(100% - 32px);
+  max-width: 400px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  animation: tour-modal-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tour-modal-enter {
+  from { opacity: 0; transform: translateY(24px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Botón cerrar del tour */
+.tour-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 10px;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.tour-close:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+/* Header del tour */
+.tour-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding-right: 30px;
+}
+
+.tour-icon {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #000F5A 0%, #0499D5 100%);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 15, 90, 0.3);
+}
+
+.tour-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* Descripción */
+.tour-description {
+  font-size: 15px;
+  color: #64748b;
+  line-height: 1.7;
+  margin: 0 0 16px;
+}
+
+/* Hint */
+.tour-hint {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 24px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 12px;
+  border-left: 4px solid #0499D5;
+}
+
+/* Footer */
+.tour-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* Dots */
+.tour-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.tour-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  transition: all 0.3s;
+}
+
+.tour-dot.active {
+  background: #0499D5;
+  transform: scale(1.3);
+  box-shadow: 0 0 0 3px rgba(4, 153, 213, 0.2);
+}
+
+.tour-dot.completed {
+  background: #10b981;
+}
+
+/* Botones */
+.tour-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.tour-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.tour-btn.secondary {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.tour-btn.secondary:hover {
+  background: #e2e8f0;
+  color: #1a1a2e;
+}
+
+.tour-btn.primary {
+  background: linear-gradient(135deg, #0499D5 0%, #0380b8 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(4, 153, 213, 0.3);
+}
+
+.tour-btn.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(4, 153, 213, 0.4);
+}
+
+/* Highlight class - IMPORTANTE */
+.tour-highlight {
+  position: relative !important;
+  z-index: 9999 !important;
+  background: inherit;
+}
+
+/* Botón flotante reiniciar */
+.tour-restart-btn {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #000F5A 0%, #0499D5 100%);
+  color: white;
+  border: none;
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(0, 15, 90, 0.35);
+  z-index: 1000;
+  transition: all 0.3s;
+  animation: tour-btn-pulse 3s ease-in-out infinite;
+}
+
+.tour-restart-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(0, 15, 90, 0.45);
+  animation: none;
+}
+
+.tour-restart-btn span {
+  display: none;
+}
+
+@keyframes tour-btn-pulse {
+  0%, 100% { box-shadow: 0 4px 24px rgba(0, 15, 90, 0.35); }
+  50% { box-shadow: 0 4px 24px rgba(0, 15, 90, 0.35), 0 0 0 8px rgba(4, 153, 213, 0.15); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) {
+  .tour-restart-btn span {
+    display: inline;
+  }
+}
+
+@media (max-width: 480px) {
+  .tour-modal {
+    left: 12px !important;
+    right: 12px !important;
+    max-width: calc(100% - 24px) !important;
+    padding: 24px 20px;
+  }
+  
+  .tour-icon {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .tour-title {
+    font-size: 17px;
+  }
+  
+  .tour-footer {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .tour-dots {
+    order: 2;
+  }
+  
+  .tour-actions {
+    width: 100%;
+    order: 1;
+  }
+  
+  .tour-btn {
+    flex: 1;
+    text-align: center;
+  }
+  
+  .tour-restart-btn {
+    bottom: 16px;
+    left: 16px;
+    padding: 12px 16px;
+  }
 }
 </style>

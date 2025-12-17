@@ -1,103 +1,151 @@
 <!-- frontend/src/views/admin/forms/FormCreateView.vue -->
 <template>
-  <div class="form-builder">
+  <div class="form-editor">
     <!-- Header -->
-    <header class="builder-header">
+    <header class="editor-header">
       <div class="header-left">
-        <input
-          type="text"
-          class="title-input"
-          placeholder="Ingrese el título del formulario"
-          v-model="store.form.title"
-        />
-        
-        <!-- NUEVO: Selector de tipo de formulario -->
-        <div class="form-type-selector">
-          <button 
-            class="type-btn"
-            :class="{ active: store.form.form_type === 'SURVEY' }"
-            @click="store.form.form_type = 'SURVEY'"
-          >
-            <i class="bi bi-clipboard-check"></i>
-            Encuesta
-          </button>
-          <button 
-            class="type-btn"
-            :class="{ active: store.form.form_type === 'EXAM' }"
-            @click="store.form.form_type = 'EXAM'"
-          >
-            <i class="bi bi-file-earmark-text"></i>
-            Examen
-          </button>
+        <button class="btn-back" @click="handleBack">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <div class="form-meta">
+          <div class="form-badges">
+            <!-- Selector de tipo -->
+            <div class="type-selector">
+              <button 
+                class="type-option"
+                :class="{ active: store.form.form_type === 'SURVEY' }"
+                @click="store.form.form_type = 'SURVEY'"
+              >
+                <i class="bi bi-clipboard-data"></i>
+                Encuesta
+              </button>
+              <button 
+                class="type-option"
+                :class="{ active: store.form.form_type === 'EXAM' }"
+                @click="store.form.form_type = 'EXAM'"
+              >
+                <i class="bi bi-mortarboard"></i>
+                Examen
+              </button>
+            </div>
+            <!-- Badge de banco de preguntas -->
+            <span v-if="store.form.settings?.use_question_bank" class="badge bank">
+              <i class="bi bi-shuffle"></i>
+              {{ store.form.settings.questions_to_show }}/{{ store.questions?.length }} aleatorias
+            </span>
+          </div>
+          <input
+            type="text"
+            class="title-input"
+            placeholder="Título del formulario"
+            v-model="store.form.title"
+          />
         </div>
-        
-        <!-- Si es examen, mostrar selector de curso -->
-        <select 
-          v-if="store.form.form_type === 'EXAM'" 
-          v-model="store.form.course_id"
-          class="course-selector"
-        >
-          <option value="">Seleccione un curso</option>
-          <option v-for="course in courses" :key="course.id" :value="course.id">
-            {{ course.name }}
-          </option>
-        </select>
       </div>
 
       <div class="header-actions">
-        <button class="btn-secondary" @click="showSettings = true">
+        <button class="btn-icon" @click="showSettings = true" title="Configuración">
           <i class="bi bi-gear"></i>
-          Configuración
         </button>
-        <button class="btn-secondary" @click="showPreview = true">
+        <button class="btn-icon" @click="showPreview = true" title="Vista previa">
           <i class="bi bi-eye"></i>
-          Vista previa
         </button>
         <button 
-          class="btn-primary" 
+          class="btn-save" 
           @click="handleSave"
           :disabled="!canSave || store.isSaving"
         >
           <i v-if="store.isSaving" class="bi bi-arrow-repeat spinning"></i>
-          <i v-else class="bi bi-save"></i>
-          {{ store.isSaving ? 'Guardando...' : 'Guardar formulario' }}
+          <i v-else class="bi bi-check-lg"></i>
+          {{ store.isSaving ? 'Guardando...' : 'Guardar' }}
         </button>
       </div>
     </header>
 
     <!-- Main Content -->
-    <div class="builder-content">
-      <!-- Sidebar - Question Types -->
-      <aside class="builder-sidebar">
+    <div class="editor-body">
+      <!-- Sidebar -->
+      <aside class="editor-sidebar">
         <div class="sidebar-section">
-          <h3>Agregar pregunta</h3>
-          <div class="question-types-grid">
-            <button
-              v-for="type in store.questionTypes"
+          <h3>Agregar Pregunta</h3>
+          <div class="question-types">
+            <button 
+              v-for="type in store.questionTypes" 
               :key="type.id"
               class="type-btn"
               @click="addQuestion(type.id)"
               :title="type.description"
             >
-              <component :is="getTypeIcon(type.code)" class="type-icon" />
+              <i :class="getTypeIcon(type.code)"></i>
               <span>{{ type.name }}</span>
             </button>
           </div>
         </div>
-      </aside>
 
-      <!-- Canvas - Questions -->
-      <main class="builder-canvas">
-        <div v-if="!store.hasQuestions" class="empty-canvas">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-            <rect x="3" y="3" width="18" height="18" rx="2"/>
-            <line x1="12" y1="8" x2="12" y2="16"/>
-            <line x1="8" y1="12" x2="16" y2="12"/>
-          </svg>
-          <h3>Comienza a crear tu formulario</h3>
-          <p>Selecciona un tipo de pregunta del panel izquierdo para agregar</p>
+        <div class="sidebar-section" v-if="store.form.form_type === 'EXAM'">
+          <h3>Curso Asociado</h3>
+          <select v-model="store.form.course_id" class="course-select">
+            <option value="">Sin curso</option>
+            <option v-for="c in courses" :key="c.id" :value="c.id">
+              {{ c.name }}
+            </option>
+          </select>
         </div>
 
+        <div class="sidebar-section">
+          <h3>Resumen</h3>
+          <div class="summary-stats">
+            <div class="stat">
+              <span class="stat-value">{{ store.questions?.length || 0 }}</span>
+              <span class="stat-label">{{ store.form.settings?.use_question_bank ? 'En banco' : 'Preguntas' }}</span>
+            </div>
+            <div class="stat" v-if="store.form.settings?.use_question_bank">
+              <span class="stat-value">{{ store.form.settings.questions_to_show || 0 }}</span>
+              <span class="stat-label">Se muestran</span>
+            </div>
+            <div class="stat" v-if="store.form.form_type === 'EXAM'">
+              <span class="stat-value">{{ totalPoints }}</span>
+              <span class="stat-label">Puntos</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main - Questions List -->
+      <main class="editor-main">
+        <!-- Description -->
+        <div class="form-description-card">
+          <label>Descripción del formulario</label>
+          <textarea
+            v-model="store.form.description"
+            placeholder="Añade una descripción para los participantes..."
+            rows="3"
+          ></textarea>
+        </div>
+
+        <!-- Alerta banco de preguntas activo -->
+        <div v-if="store.form.settings?.use_question_bank" class="bank-alert">
+          <i class="bi bi-shuffle"></i>
+          <div class="bank-alert-content">
+            <strong>Banco de preguntas activo</strong>
+            <p>
+              Se seleccionarán <strong>{{ store.form.settings.questions_to_show }}</strong> preguntas 
+              aleatorias de las <strong>{{ store.questions?.length }}</strong> disponibles para cada intento.
+            </p>
+          </div>
+          <button class="btn-configure" @click="showSettings = true; settingsTab = 'exam'">
+            Configurar
+          </button>
+        </div>
+
+        <!-- Empty State -->
+        <div v-if="!store.hasQuestions" class="empty-questions">
+          <i class="bi bi-plus-circle"></i>
+          <h3>Sin preguntas</h3>
+          <p>Selecciona un tipo de pregunta del panel izquierdo para comenzar</p>
+        </div>
+
+        <!-- Questions List -->
         <TransitionGroup v-else name="list" tag="div" class="questions-list">
           <QuestionCard
             v-for="(question, index) in store.questions"
@@ -119,25 +167,325 @@
     </div>
 
     <!-- Settings Modal -->
-    <FormSettingsModal
-      v-if="showSettings"
-      :settings="store.form.settings"
-      :form-type="store.form.form_type"
-      @close="showSettings = false"
-      @save="handleSettingsSave"
-    />
+    <Teleport to="body">
+      <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
+        <div class="modal-content settings-modal">
+          <div class="modal-header">
+            <h2>Configuración del Formulario</h2>
+            <button class="btn-close" @click="showSettings = false">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="settings-tabs">
+              <button 
+                :class="{ active: settingsTab === 'general' }"
+                @click="settingsTab = 'general'"
+              >General</button>
+              <button 
+                :class="{ active: settingsTab === 'access' }"
+                @click="settingsTab = 'access'"
+              >Acceso</button>
+              <button 
+                v-if="store.form.form_type === 'EXAM'"
+                :class="{ active: settingsTab === 'exam' }"
+                @click="settingsTab = 'exam'"
+              >Examen</button>
+              <button 
+                :class="{ active: settingsTab === 'messages' }"
+                @click="settingsTab = 'messages'"
+              >Mensajes</button>
+            </div>
+
+            <!-- General Tab -->
+            <div v-show="settingsTab === 'general'" class="settings-content">
+              <div class="setting-group">
+                <label class="setting-toggle">
+                  <input type="checkbox" v-model="store.form.settings.is_active">
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Formulario activo</span>
+                </label>
+                <p class="setting-help">Cuando está desactivado, nadie puede responder</p>
+              </div>
+
+              <div class="setting-group">
+                <label class="setting-toggle">
+                  <input type="checkbox" v-model="store.form.settings.show_progress_bar">
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Mostrar barra de progreso</span>
+                </label>
+              </div>
+
+              <div class="setting-group">
+                <label class="setting-toggle">
+                  <input type="checkbox" v-model="store.form.settings.shuffle_questions">
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Mezclar preguntas</span>
+                </label>
+                <p class="setting-help">Cambia el orden de las preguntas en cada intento</p>
+              </div>
+            </div>
+
+            <!-- Access Tab -->
+            <div v-show="settingsTab === 'access'" class="settings-content">
+              <div class="setting-group">
+                <label class="setting-toggle">
+                  <input type="checkbox" v-model="store.form.settings.requires_login">
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Requiere inicio de sesión</span>
+                </label>
+              </div>
+
+              <div class="setting-group" v-if="store.form.form_type === 'SURVEY'">
+                <label class="setting-toggle">
+                  <input type="checkbox" v-model="store.form.settings.is_public">
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Formulario público</span>
+                </label>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-group">
+                  <label>Disponible desde</label>
+                  <input type="datetime-local" v-model="store.form.settings.available_from">
+                </div>
+                <div class="setting-group">
+                  <label>Disponible hasta</label>
+                  <input type="datetime-local" v-model="store.form.settings.available_until">
+                </div>
+              </div>
+            </div>
+
+            <!-- Exam Tab -->
+            <div v-show="settingsTab === 'exam'" class="settings-content">
+              <div class="setting-group">
+                <label>Tiempo límite (minutos)</label>
+                <input 
+                  type="number" 
+                  v-model.number="store.form.settings.time_limit_minutes"
+                  min="1"
+                  placeholder="Sin límite"
+                >
+                <p class="setting-help">Dejar vacío para sin límite de tiempo</p>
+              </div>
+
+              <div class="setting-group">
+                <label>Puntaje mínimo para aprobar (%)</label>
+                <input 
+                  type="number" 
+                  v-model.number="store.form.settings.passing_score"
+                  min="0"
+                  max="100"
+                  placeholder="70"
+                >
+              </div>
+
+              <hr class="setting-divider">
+
+              <!-- Banco de Preguntas -->
+              <div class="setting-group bank-section">
+                <div class="bank-header">
+                  <i class="bi bi-shuffle"></i>
+                  <h4>Banco de Preguntas Aleatorias</h4>
+                </div>
+                
+                <label class="setting-toggle">
+                  <input 
+                    type="checkbox" 
+                    v-model="store.form.settings.use_question_bank" 
+                    @change="onQuestionBankToggle"
+                  >
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Activar selección aleatoria</span>
+                </label>
+                <p class="setting-help">
+                  El sistema seleccionará preguntas al azar del banco para cada intento
+                </p>
+
+                <Transition name="fade">
+                  <div v-if="store.form.settings.use_question_bank" class="bank-config">
+                    <div class="bank-stats">
+                      <div class="stat-item">
+                        <span class="stat-value">{{ store.questions?.length || 0 }}</span>
+                        <span class="stat-label">Preguntas en banco</span>
+                      </div>
+                      <div class="stat-arrow">
+                        <i class="bi bi-arrow-right"></i>
+                      </div>
+                      <div class="stat-item highlight">
+                        <input 
+                          type="number" 
+                          v-model.number="store.form.settings.questions_to_show"
+                          :max="store.questions?.length || 0"
+                          min="1"
+                          class="stat-input"
+                        >
+                        <span class="stat-label">Se mostrarán</span>
+                      </div>
+                    </div>
+
+                    <div v-if="!questionBankValid" class="bank-warning">
+                      <i class="bi bi-exclamation-triangle"></i>
+                      <span v-if="!store.form.settings.questions_to_show">
+                        Ingresa el número de preguntas a mostrar
+                      </span>
+                      <span v-else-if="store.form.settings.questions_to_show > (store.questions?.length || 0)">
+                        No puedes mostrar más preguntas de las que hay en el banco
+                      </span>
+                    </div>
+
+                    <div v-else class="bank-info">
+                      <i class="bi bi-info-circle"></i>
+                      <span>
+                        Cada estudiante recibirá <strong>{{ store.form.settings.questions_to_show }}</strong> preguntas 
+                        diferentes seleccionadas al azar
+                      </span>
+                    </div>
+                  </div>
+                </Transition>
+              </div>
+
+              <hr class="setting-divider">
+
+              <div class="setting-group">
+                <label class="setting-toggle">
+                  <input type="checkbox" v-model="store.form.settings.show_score_after_submit">
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Mostrar puntaje al finalizar</span>
+                </label>
+              </div>
+
+              <div class="setting-group">
+                <label class="setting-toggle">
+                  <input type="checkbox" v-model="store.form.settings.show_correct_answers">
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Mostrar respuestas correctas</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Messages Tab -->
+            <div v-show="settingsTab === 'messages'" class="settings-content">
+              <div class="setting-group">
+                <label>Mensaje de bienvenida</label>
+                <textarea 
+                  v-model="store.form.settings.welcome_message"
+                  rows="3"
+                  placeholder="Se muestra antes de comenzar..."
+                ></textarea>
+              </div>
+
+              <div class="setting-group">
+                <label>Mensaje al enviar</label>
+                <textarea 
+                  v-model="store.form.settings.submit_message"
+                  rows="3"
+                  placeholder="Gracias por completar el formulario."
+                ></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-secondary" @click="showSettings = false">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- Preview Modal -->
-    <FormPreviewModal
-      v-if="showPreview"
-      :form="store.form"
-      :questions="store.questions"
-      @close="showPreview = false"
-    />
+    <Teleport to="body">
+      <div v-if="showPreview" class="modal-overlay" @click.self="showPreview = false">
+        <div class="modal-content preview-modal">
+          <div class="modal-header">
+            <h2>Vista Previa</h2>
+            <button class="btn-close" @click="showPreview = false">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          <div class="modal-body preview-body">
+            <div class="preview-container">
+              <div v-if="store.form.settings?.use_question_bank" class="preview-bank-notice">
+                <i class="bi bi-shuffle"></i>
+                <span>
+                  Vista previa muestra todas las preguntas. 
+                  En el examen real se mostrarán {{ store.form.settings.questions_to_show }} aleatorias.
+                </span>
+              </div>
+              
+              <div class="preview-form">
+                <h1>{{ store.form.title || 'Sin título' }}</h1>
+                <p v-if="store.form.description">{{ store.form.description }}</p>
+                
+                <div 
+                  v-for="(q, i) in store.questions" 
+                  :key="q.temp_id || q.id"
+                  class="preview-question"
+                >
+                  <div class="question-header">
+                    <span class="question-number">{{ i + 1 }}</span>
+                    <span class="question-text">{{ q.question_text || 'Pregunta sin texto' }}</span>
+                    <span v-if="q.is_required" class="required-mark">*</span>
+                  </div>
+                  
+                  <div class="question-preview-input">
+                    <template v-if="['TEXT', 'EMAIL'].includes(q.type_code)">
+                      <input type="text" :placeholder="q.placeholder || 'Tu respuesta'" disabled>
+                    </template>
+                    <template v-else-if="q.type_code === 'TEXTAREA'">
+                      <textarea :placeholder="q.placeholder || 'Tu respuesta'" disabled></textarea>
+                    </template>
+                    <template v-else-if="q.type_code === 'RADIO'">
+                      <div v-for="opt in q.options" :key="opt.temp_id || opt.id" class="radio-option">
+                        <input type="radio" disabled>
+                        <span>{{ opt.option_text }}</span>
+                      </div>
+                    </template>
+                    <template v-else-if="q.type_code === 'CHECKBOX'">
+                      <div v-for="opt in q.options" :key="opt.temp_id || opt.id" class="checkbox-option">
+                        <input type="checkbox" disabled>
+                        <span>{{ opt.option_text }}</span>
+                      </div>
+                    </template>
+                    <template v-else-if="q.type_code === 'SELECT'">
+                      <select disabled>
+                        <option>Seleccionar...</option>
+                        <option v-for="opt in q.options" :key="opt.temp_id || opt.id">{{ opt.option_text }}</option>
+                      </select>
+                    </template>
+                    <template v-else>
+                      <input type="text" placeholder="Respuesta" disabled>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Unsaved Changes Modal -->
+    <Teleport to="body">
+      <div v-if="showUnsavedModal" class="modal-overlay">
+        <div class="modal-content unsaved-modal">
+          <div class="modal-header">
+            <h2>Cambios sin guardar</h2>
+          </div>
+          <div class="modal-body">
+            <p>Tienes cambios sin guardar. ¿Qué deseas hacer?</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-secondary" @click="discardAndLeave">Descartar</button>
+            <button class="btn-primary" @click="saveAndLeave">Guardar y salir</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- Toast -->
     <Transition name="toast">
       <div v-if="toast.show" class="toast" :class="toast.type">
+        <i :class="toast.type === 'success' ? 'bi bi-check-circle' : 'bi bi-exclamation-circle'"></i>
         {{ toast.message }}
       </div>
     </Transition>
@@ -146,62 +494,70 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { useFormBuilderStore } from '@/stores/formBuilder'
 import QuestionCard from '@/components/forms/QuestionCard.vue'
-import FormSettingsModal from '@/components/forms/FormSettingsModal.vue'
-import FormPreviewModal from '@/components/forms/FormPreviewModal.vue'
-import { formService } from '@/services/form.service'
 import { courseService } from '@/services/course.service'
-
 
 const router = useRouter()
 const store = useFormBuilderStore()
 
+// State
+const courses = ref([])
 const showSettings = ref(false)
 const showPreview = ref(false)
+const showUnsavedModal = ref(false)
+const settingsTab = ref('general')
 const toast = ref({ show: false, message: '', type: 'success' })
 
+let pendingNavigation = null
+
+// Computed
 const canSave = computed(() => {
-  return store.form.title.trim() && store.hasQuestions
+  if (!store.form?.title?.trim() || !store.hasQuestions) return false
+  if (store.form.settings?.use_question_bank && !questionBankValid.value) return false
+  return true
 })
 
-const courses = ref([])
+const totalPoints = computed(() => {
+  if (!store.questions) return 0
+  return store.questions.reduce((sum, q) => sum + (parseFloat(q.points) || 0), 0)
+})
 
-// En onMounted, agrega:
-onMounted(async () => {
-  store.resetForm()
-  await store.loadQuestionTypes()
-  
-  // Cargar cursos
-  try {
-    const response = await courseService.list()
-    courses.value = response.data?.courses || []
-  } catch (error) {
-    console.error('Error cargando cursos:', error)
+const questionBankValid = computed(() => {
+  if (!store.form.settings?.use_question_bank) return true
+  const toShow = store.form.settings.questions_to_show
+  if (!toShow || toShow < 1) return false
+  return toShow <= (store.questions?.length || 0)
+})
+
+// Methods
+function onQuestionBankToggle() {
+  if (store.form.settings.use_question_bank && !store.form.settings.questions_to_show) {
+    store.form.settings.questions_to_show = Math.min(10, store.questions?.length || 10)
   }
-  
-  window.addEventListener('beforeunload', handleBeforeUnload)
-})
-
-// Cargar tipos de preguntas
-onMounted(async () => {
-  store.resetForm()
-  await store.loadQuestionTypes()
-  
-  // Prevenir salir sin guardar
-  window.addEventListener('beforeunload', handleBeforeUnload)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('beforeunload', handleBeforeUnload)
-})
-
-function handleBeforeUnload(e) {
-  if (store.isDirty) {
-    e.preventDefault()
-    e.returnValue = ''
+  if (!store.form.settings.use_question_bank) {
+    store.form.settings.questions_to_show = null
   }
+}
+
+function getTypeIcon(code) {
+  const icons = {
+    TEXT: 'bi bi-fonts',
+    TEXTAREA: 'bi bi-text-paragraph',
+    SELECT: 'bi bi-chevron-down',
+    RADIO: 'bi bi-circle',
+    CHECKBOX: 'bi bi-check-square',
+    NUMBER: 'bi bi-123',
+    EMAIL: 'bi bi-envelope',
+    DATE: 'bi bi-calendar',
+    TIME: 'bi bi-clock',
+    DATETIME: 'bi bi-calendar-event',
+    FILE: 'bi bi-paperclip',
+    RATING: 'bi bi-star',
+    SCALE: 'bi bi-sliders'
+  }
+  return icons[code] || 'bi bi-question-circle'
 }
 
 function addQuestion(typeId) {
@@ -209,22 +565,11 @@ function addQuestion(typeId) {
 }
 
 function moveUp(index) {
-  if (index > 0) {
-    store.moveQuestion(index, index - 1)
-  }
+  if (index > 0) store.moveQuestion(index, index - 1)
 }
 
 function moveDown(index) {
-  if (index < store.questions.length - 1) {
-    store.moveQuestion(index, index + 1)
-  }
-}
-
-function handleSettingsSave(newSettings) {
-  store.form.settings = { ...store.form.settings, ...newSettings }
-  store.isDirty = true
-  showSettings.value = false
-  showToast('Configuración actualizada', 'success')
+  if (index < store.questions.length - 1) store.moveQuestion(index, index + 1)
 }
 
 async function handleSave() {
@@ -233,7 +578,6 @@ async function handleSave() {
     return
   }
 
-  // Validar que todas las preguntas tengan texto
   const emptyQuestion = store.questions.find(q => !q.question_text.trim())
   if (emptyQuestion) {
     showToast('Todas las preguntas deben tener texto', 'error')
@@ -252,337 +596,751 @@ async function handleSave() {
   }
 }
 
-function showToast(message, type = 'success') {
-  toast.value = { show: true, message, type }
-  setTimeout(() => {
-    toast.value.show = false
-  }, 3000)
+function handleBack() {
+  if (store.isDirty) {
+    showUnsavedModal.value = true
+    pendingNavigation = () => router.push('/admin/forms')
+  } else {
+    router.push('/admin/forms')
+  }
 }
 
-function getTypeIcon(code) {
-  const icons = {
-    TEXT: 'IconText',
-    TEXTAREA: 'IconTextarea',
-    SELECT: 'IconSelect',
-    RADIO: 'IconRadio',
-    CHECKBOX: 'IconCheckbox',
-    NUMBER: 'IconNumber',
-    EMAIL: 'IconEmail',
-    DATE: 'IconDate',
-    TIME: 'IconTime',
-    DATETIME: 'IconDatetime',
-    FILE: 'IconFile',
-    RATING: 'IconRating',
-    SCALE: 'IconScale'
+async function saveAndLeave() {
+  await handleSave()
+  showUnsavedModal.value = false
+  if (pendingNavigation) {
+    pendingNavigation()
+    pendingNavigation = null
   }
-  return icons[code] || 'IconText'
 }
+
+function discardAndLeave() {
+  store.isDirty = false
+  showUnsavedModal.value = false
+  if (pendingNavigation) {
+    pendingNavigation()
+    pendingNavigation = null
+  }
+}
+
+function showToast(message, type = 'success') {
+  toast.value = { show: true, message, type }
+  setTimeout(() => { toast.value.show = false }, 3000)
+}
+
+function handleBeforeUnload(e) {
+  if (store.isDirty) {
+    e.preventDefault()
+    e.returnValue = ''
+  }
+}
+
+// Navigation guard
+onBeforeRouteLeave((to, from, next) => {
+  if (store.isDirty) {
+    showUnsavedModal.value = true
+    pendingNavigation = () => next()
+    next(false)
+  } else {
+    next()
+  }
+})
+
+onMounted(async () => {
+  store.resetForm()
+  await store.loadQuestionTypes()
+  
+  try {
+    const response = await courseService.list()
+    courses.value = response.data?.courses || []
+  } catch (error) {
+    console.error('Error cargando cursos:', error)
+  }
+  
+  window.addEventListener('beforeunload', handleBeforeUnload)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+})
 </script>
 
 <style scoped>
-.form-builder {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
+.form-editor {
+  min-height: 100vh;
   background: #f8fafc;
 }
 
-.form-type-selector {
+.editor-header {
   display: flex;
-  background: #f3f4f6;
-  border-radius: 10px;
-  padding: 3px;
-  gap: 3px;
-}
-
-.form-type-selector .type-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: none;
-  background: transparent;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #6b7280;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.form-type-selector .type-btn.active {
-  background: #ffffff;
-  color: #001845;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.form-type-selector .type-btn:hover:not(.active) {
-  color: #374151;
-}
-
-.course-selector {
-  padding: 8px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #374151;
-  background: #ffffff;
-  min-width: 200px;
-}
-
-/* Header */
-.builder-header {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 12px 24px;
-  background: #ffffff;
+  align-items: center;
+  padding: 16px 24px;
+  background: white;
   border-bottom: 1px solid #e5e7eb;
-  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   flex: 1;
-  min-width: 0;
 }
 
 .btn-back {
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  border: none;
   border-radius: 8px;
-  color: #6b7280;
-  transition: all 0.15s ease;
-}
-
-.btn-back:hover {
   background: #f3f4f6;
-  color: #1f2937;
+  color: #374151;
+  cursor: pointer;
 }
 
-.header-title {
+.btn-back:hover { background: #e5e7eb; }
+
+.form-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.form-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.type-selector {
+  display: flex;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.type-option {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex: 1;
-  min-width: 0;
+  gap: 6px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
 }
+
+.type-option.active {
+  background: white;
+  color: #001845;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.type-option:hover:not(.active) { color: #374151; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge.bank { background: #e0e7ff; color: #4338ca; }
 
 .title-input {
-  flex: 1;
-  min-width: 0;
   border: none;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
   background: transparent;
-  padding: 8px 0;
-}
-
-.title-input:focus {
   outline: none;
+  width: 100%;
 }
 
-.title-input::placeholder {
-  color: #9ca3af;
-}
-
-.header-badge {
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  flex-shrink: 0;
-}
-
-.header-badge.survey {
-  background: #e0e7ff;
-  color: #4338ca;
-}
-
-.header-badge.exam {
-  background: #fef3c7;
-  color: #d97706;
-}
+.title-input::placeholder { color: #9ca3af; }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
-.btn-secondary,
-.btn-primary {
-  display: inline-flex;
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  justify-content: center;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  font-size: 13px;
+  background: white;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.btn-icon:hover {
+  background: #f9fafb;
+  color: #111827;
+}
+
+.btn-save {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: #001845;
+  color: white;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
-  border: none;
 }
 
-.btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
+.btn-save:hover:not(:disabled) { background: #002d6e; }
+.btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.spinning { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.editor-body {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.btn-secondary:hover {
-  background: #e5e7eb;
-}
-
-.btn-primary {
-  background: #001845;
-  color: #ffffff;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #002866;
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Content */
-.builder-content {
+.editor-sidebar {
   display: flex;
-  flex: 1;
-  overflow: hidden;
-}
-
-/* Sidebar */
-.builder-sidebar {
-  width: 280px;
-  background: #ffffff;
-  border-right: 1px solid #e5e7eb;
-  overflow-y: auto;
-  flex-shrink: 0;
+  flex-direction: column;
+  gap: 24px;
 }
 
 .sidebar-section {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
   padding: 20px;
 }
 
 .sidebar-section h3 {
   margin: 0 0 16px 0;
-  font-size: 12px;
+  font-size: 0.875rem;
   font-weight: 600;
   color: #6b7280;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
-.question-types-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+.question-types {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
 .type-btn {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 12px 8px;
-  background: #f9fafb;
+  gap: 12px;
+  padding: 10px 14px;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
+  background: white;
+  color: #374151;
+  font-size: 0.875rem;
   cursor: pointer;
-  transition: all 0.15s ease;
+  text-align: left;
 }
 
 .type-btn:hover {
   background: #f3f4f6;
-  border-color: #d1d5db;
-  transform: translateY(-1px);
+  border-color: #001845;
+  color: #001845;
 }
 
-.type-btn .type-icon {
-  width: 20px;
-  height: 20px;
-  color: #6b7280;
+.type-btn i { width: 20px; color: #6b7280; }
+
+.course-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
 }
 
-.type-btn span {
-  font-size: 11px;
-  font-weight: 500;
-  color: #374151;
-  text-align: center;
-  line-height: 1.2;
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
 }
 
-/* Canvas */
-.builder-canvas {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px;
-}
-
-.empty-canvas {
+.stat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 400px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #001845;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #6b7280;
   text-align: center;
-  color: #9ca3af;
 }
 
-.empty-canvas svg {
-  margin-bottom: 16px;
-  color: #d1d5db;
+.editor-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.empty-canvas h3 {
-  margin: 0 0 8px 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #4b5563;
+.form-description-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
 }
 
-.empty-canvas p {
-  margin: 0;
-  font-size: 14px;
+.form-description-card label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
 }
+
+.form-description-card textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.bank-alert {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #e0e7ff 0%, #dbeafe 100%);
+  border: 1px solid #a5b4fc;
+  border-radius: 12px;
+}
+
+.bank-alert > i { font-size: 1.5rem; color: #4338ca; }
+
+.bank-alert-content { flex: 1; }
+.bank-alert-content strong { display: block; color: #312e81; margin-bottom: 4px; }
+.bank-alert-content p { margin: 0; font-size: 0.875rem; color: #4338ca; }
+
+.btn-configure {
+  padding: 8px 16px;
+  border: 1px solid #4338ca;
+  border-radius: 8px;
+  background: white;
+  color: #4338ca;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-configure:hover { background: #4338ca; color: white; }
+
+.empty-questions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 20px;
+  background: white;
+  border: 2px dashed #e5e7eb;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.empty-questions i { font-size: 3rem; color: #d1d5db; margin-bottom: 16px; }
+.empty-questions h3 { margin: 0 0 8px 0; color: #374151; }
+.empty-questions p { margin: 0; color: #6b7280; }
 
 .questions-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-width: 720px;
-  margin: 0 auto;
 }
 
-/* List Transition */
-.list-enter-active,
-.list-leave-active {
-  transition: all 0.3s ease;
+.list-enter-active, .list-leave-active { transition: all 0.3s ease; }
+.list-enter-from { opacity: 0; transform: translateY(-20px); }
+.list-leave-to { opacity: 0; transform: translateX(20px); }
+.list-move { transition: transform 0.3s ease; }
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
 }
 
-.list-enter-from {
-  opacity: 0;
-  transform: translateY(-20px);
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-.list-leave-to {
-  opacity: 0;
-  transform: translateX(20px);
+.settings-modal { max-width: 600px; }
+.preview-modal { max-width: 800px; }
+.unsaved-modal { max-width: 400px; }
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.list-move {
-  transition: transform 0.3s ease;
+.modal-header h2 { margin: 0; font-size: 1.25rem; }
+
+.btn-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.modal-body { padding: 24px; overflow-y: auto; }
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.btn-secondary {
+  padding: 10px 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  color: #374151;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-primary {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: #001845;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Settings tabs */
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  padding: 4px;
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+
+.settings-tabs button {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #6b7280;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.settings-tabs button.active {
+  background: white;
+  color: #111827;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setting-group > label:not(.setting-toggle) {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.setting-group input[type="text"],
+.setting-group input[type="number"],
+.setting-group input[type="datetime-local"],
+.setting-group textarea {
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-family: inherit;
+}
+
+.setting-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.setting-toggle input { display: none; }
+
+.toggle-slider {
+  width: 44px;
+  height: 24px;
+  background: #d1d5db;
+  border-radius: 12px;
+  position: relative;
+  transition: 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle-slider::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: 0.2s;
+}
+
+.setting-toggle input:checked + .toggle-slider { background: #001845; }
+.setting-toggle input:checked + .toggle-slider::after { left: 22px; }
+
+.toggle-label { font-weight: 500; color: #374151; }
+.setting-help { font-size: 0.75rem; color: #6b7280; margin: 0; }
+.setting-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.setting-divider { border: none; border-top: 1px solid #e5e7eb; margin: 8px 0; }
+
+/* Bank section */
+.bank-section {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #bae6fd;
+}
+
+.bank-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.bank-header i { font-size: 1.25rem; color: #0284c7; }
+.bank-header h4 { margin: 0; font-size: 0.95rem; font-weight: 600; color: #0c4a6e; }
+
+.bank-config {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed #7dd3fc;
+}
+
+.bank-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 10px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-item .stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e3a5f;
+}
+
+.stat-input {
+  width: 80px;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0284c7;
+  text-align: center;
+  border: 2px solid #7dd3fc;
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: #f0f9ff;
+}
+
+.stat-input:focus {
+  outline: none;
+  border-color: #0284c7;
+}
+
+.stat-item .stat-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.stat-item.highlight .stat-label { color: #0284c7; font-weight: 600; }
+.stat-arrow { color: #94a3b8; font-size: 1.25rem; }
+
+.bank-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 0.875rem;
+}
+
+.bank-warning i { color: #f59e0b; }
+
+.bank-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  border-radius: 8px;
+  color: #065f46;
+  font-size: 0.875rem;
+}
+
+.bank-info i { color: #10b981; margin-top: 2px; }
+
+/* Preview */
+.preview-body { background: #f3f4f6; }
+.preview-container { max-width: 600px; margin: 0 auto; }
+
+.preview-bank-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+  color: #92400e;
+}
+
+.preview-bank-notice i { color: #f59e0b; }
+
+.preview-form {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.preview-form h1 { margin: 0 0 8px 0; font-size: 1.5rem; }
+.preview-form > p { margin: 0 0 24px 0; color: #6b7280; }
+
+.preview-question {
+  padding: 20px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.question-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.question-number {
+  background: #001845;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.question-text { font-weight: 500; color: #111827; }
+.required-mark { color: #dc2626; }
+
+.question-preview-input input,
+.question-preview-input textarea,
+.question-preview-input select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.radio-option, .checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
 }
 
 /* Toast */
@@ -590,82 +1348,36 @@ function getTypeIcon(code) {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: #111827;
+  color: white;
   border-radius: 8px;
-  font-size: 14px;
   font-weight: 500;
-  color: #ffffff;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: 2000;
 }
 
-.toast.success {
-  background: #059669;
-}
+.toast.success { background: #059669; }
+.toast.error { background: #dc2626; }
 
-.toast.error {
-  background: #dc2626;
-}
+.toast-enter-active, .toast-leave-active { transition: all 0.3s ease; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(20px); }
 
-.toast-enter-active,
-.toast-leave-active {
-  transition: all 0.3s ease;
-}
+.fade-enter-active, .fade-leave-active { transition: all 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-10px); }
 
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-/* Spin animation */
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Responsive */
 @media (max-width: 1024px) {
-  .builder-sidebar {
-    width: 220px;
-  }
-  
-  .question-types-grid {
-    grid-template-columns: 1fr;
-  }
+  .editor-body { grid-template-columns: 1fr; }
+  .question-types { display: grid; grid-template-columns: repeat(3, 1fr); }
 }
 
-@media (max-width: 768px) {
-  .builder-header {
-    flex-wrap: wrap;
-    padding: 12px 16px;
-  }
-  
-  .header-actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
-  
-  .builder-content {
-    flex-direction: column;
-  }
-  
-  .builder-sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #e5e7eb;
-    max-height: 200px;
-  }
-  
-  .question-types-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-  
-  .builder-canvas {
-    padding: 16px;
-  }
+@media (max-width: 640px) {
+  .editor-header { flex-direction: column; gap: 16px; }
+  .question-types { grid-template-columns: repeat(2, 1fr); }
+  .setting-row { grid-template-columns: 1fr; }
+  .bank-stats { flex-direction: column; gap: 12px; }
+  .stat-arrow { transform: rotate(90deg); }
 }
 </style>
