@@ -24,6 +24,13 @@ const routes = [
     component: () => import('@/views/admin/LoginView.vue'),
     meta: { requiresGuest: true }
   },
+
+  {
+    path: '/result/:uuid',
+    name: 'ResultView',
+    component: () => import('@/views/public/ResultView.vue'),
+    meta: { requiresAuth: false }
+  },
   
   // ══════════════════════════════════════════
   // ADMIN ROUTES (protegidas)
