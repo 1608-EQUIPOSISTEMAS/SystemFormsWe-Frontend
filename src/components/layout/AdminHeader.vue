@@ -266,13 +266,6 @@ function handleClickOutside(e) {
   }
 }
 
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-  loadUnreadCount()
-  // Polling cada 30 segundos
-  pollInterval = setInterval(loadUnreadCount, 30000)
-})
-
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   if (pollInterval) clearInterval(pollInterval)

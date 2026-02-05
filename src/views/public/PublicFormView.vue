@@ -87,7 +87,7 @@
             
             <!-- Título y subtítulo -->
             <h2 class="form-title">Verificar acceso</h2>
-            <p class="form-subtitle">Ingresa el correo registrado en el Campus Virtual para continuar</p>
+            <p class="form-subtitle">Ingresa el correo registrado en el Intranet para continuar</p>
             
             <!-- Formulario -->
             <form @submit.prevent="validateOdooEmail" class="validation-form">
@@ -286,7 +286,7 @@
             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
             <line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-          <span>Tu certificado también está disponible en el Campus Virtual</span>
+          <span>Tu certificado también está disponible en la Intranet</span>
         </p>
       </div>
     </div>
@@ -314,7 +314,7 @@
             <line x1="15" y1="9" x2="9" y2="15"/>
             <line x1="9" y1="9" x2="15" y2="15"/>
           </svg>
-          <span>No Aprobado</span>
+          <span>Desaprobado</span>
         </div>
         
         <div class="score-number-hero failed">
@@ -380,7 +380,7 @@
         
         <h1 class="result-title">Examen No Aprobado</h1>
         <p class="result-subtitle">
-          {{ previousResponse.attempt_number < 2 ? 'Tienes una oportunidad más para aprobar' : 'Has agotado tus intentos disponibles' }}
+          {{ previousResponse.attempt_number < 1 ? 'Tienes una oportunidad más para aprobar' : 'Has agotado tus intentos disponibles' }}
         </p>
         
         <!-- Historial de intentos (si hay más de uno) -->
@@ -1012,7 +1012,7 @@ async function checkCertificateStatus() {
         position: 'top-end',
         icon: 'success',
         title: 'Certificado disponible',
-        html: 'Puedes descargarlo aquí y verlo en tu <strong>Campus Virtual</strong>',
+        html: 'Puedes descargarlo aquí y verlo en tu <strong>Intranet</strong>',
         showConfirmButton: false,
         timer: 5000,
         timerProgressBar: true,
@@ -1064,18 +1064,20 @@ async function checkCertificateStatus() {
 function startCertificatePolling() {
   if (certificatePolling.value) return
   
-  console.log('🔄 Iniciando polling de certificado (cada 1 segundo)...')
+  console.log('🔄 Iniciando polling de certificado (cada 5 segundos)...')
   
-  certificatePolling.value = setInterval(checkCertificateStatus, 1000)
+  certificatePolling.value = setInterval(checkCertificateStatus, 5000)
   
-  checkCertificateStatus()
+  // Primera verificación después de 8 segundos (dar tiempo a Odoo)
+  setTimeout(checkCertificateStatus, 8000)
   
+  // Timeout máximo: 60 segundos
   setTimeout(() => {
     if (certificatePolling.value) {
-      console.log('⏱️ Timeout de polling alcanzado (2 minutos)')
+      console.log('⏱️ Timeout de polling alcanzado (60s)')
       stopCertificatePolling()
     }
-  }, 120000)
+  }, 60000)
 }
 
 function stopCertificatePolling() {
@@ -1578,11 +1580,10 @@ async function submitForm(auto = false) {
         toast: true,
         position: 'top-end',
         icon: 'info',
-        title: 'Certificándote en el Campus Virtual',
+        title: 'Certificándote en la Intranet',
         html: 'Estamos generando tu certificado...',
         showConfirmButton: false,
         showCloseButton: false,
-        allowOutsideClick: false,
         didOpen: () => {
           Swal.showLoading()
         },
@@ -1851,6 +1852,327 @@ watch(answers, () => {
 </script>
 
 <style scoped>
+
+
+  /* ═══════════════════════════════════════════════════════════════
+   LINKEDIN MODAL STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Overlay */
+.linkedin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Modal Container */
+.linkedin-modal {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Header */
+.linkedin-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.linkedin-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.linkedin-close-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.linkedin-close-btn:hover {
+  background: #e2e8f0;
+  color: #1a1a2e;
+}
+
+/* Body */
+.linkedin-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Preview Card */
+.linkedin-preview-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.preview-avatar {
+  width: 40px;
+  height: 40px;
+  background: #000F5A;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.preview-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-info strong {
+  font-size: 14px;
+  color: #1a1a2e;
+}
+
+.preview-info span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Preview Image / Score */
+.preview-image {
+  background: linear-gradient(135deg, #000F5A 0%, #0499D5 100%);
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  color: white;
+}
+
+.preview-image-placeholder {
+  color: white;
+}
+
+.placeholder-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.placeholder-value {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.placeholder-status {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 8px;
+  padding: 4px 12px;
+  background: rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+}
+
+.placeholder-status.passed {
+  background: rgba(16, 185, 129, 0.3);
+  color: #a7f3d0;
+}
+
+.placeholder-title {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+/* Editor */
+.linkedin-editor {
+  margin-bottom: 16px;
+}
+
+.editor-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.editor-textarea {
+  width: 100%;
+  padding: 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #1a1a2e;
+  resize: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.editor-textarea:focus {
+  outline: none;
+  border-color: #0077b5;
+}
+
+.editor-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.char-count {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.char-count.warning {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+/* Info Box */
+.linkedin-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #eff6ff;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #3b82f6;
+}
+
+.linkedin-info svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Footer */
+.linkedin-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.linkedin-btn-cancel {
+  padding: 10px 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.linkedin-btn-cancel:hover {
+  border-color: #cbd5e1;
+  color: #1a1a2e;
+}
+
+.linkedin-btn-share {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border: none;
+  border-radius: 8px;
+  background: #0077b5;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.linkedin-btn-share:hover:not(:disabled) {
+  background: #006097;
+}
+
+.linkedin-btn-share:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Loader */
+.btn-loader {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* LinkedIn Action Button (para sidebar) */
+.action-btn.linkedin {
+  background: #0077b5;
+  color: white;
+}
+
+.action-btn.linkedin:hover {
+  background: #006097;
+}
 
   /* ═══════════════════════════════════════════════════════════════
    QUIZ SCREEN - ESTILOS COMPLETOS (AGREGAR AL PRIMER CSS)
