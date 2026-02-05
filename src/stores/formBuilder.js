@@ -88,11 +88,19 @@ const questionBankInfo = computed(() => {
         allow_multiple_responses: false,
         show_progress_bar: true,
         shuffle_questions: false,
+        use_question_bank: false,
+        questions_to_show: null,
         passing_score: null,
         show_score_after_submit: false,
         show_correct_answers: false,
         welcome_message: '',
-        submit_message: 'Gracias por completar el formulario.'
+        submit_message: '',
+        // ═══ CAMPOS ODOO ═══
+        requires_odoo_validation: false,
+        odoo_course_name: '',
+        odoo_slide_channel_id: null,
+        odoo_academic_hours: 24,
+        odoo_course_type: 'online_ind',
       }
     }
     sections.value = []
@@ -255,12 +263,57 @@ const questionBankInfo = computed(() => {
         description: form.value.description,
         form_type: form.value.form_type,
         course_id: form.value.course_id,
-        settings: form.value.settings,
+        // ═══ Settings como objeto anidado (el backend ya lo soporta) ═══
+        settings: {
+          is_active: form.value.settings.is_active,
+          is_public: form.value.settings.is_public,
+          requires_login: form.value.settings.requires_login,
+          available_from: form.value.settings.available_from || null,
+          available_until: form.value.settings.available_until || null,
+          time_limit_minutes: form.value.settings.time_limit_minutes || null,
+          allow_multiple_responses: form.value.settings.allow_multiple_responses,
+          show_progress_bar: form.value.settings.show_progress_bar,
+          shuffle_questions: form.value.settings.shuffle_questions,
+          use_question_bank: form.value.settings.use_question_bank,
+          questions_to_show: form.value.settings.use_question_bank 
+            ? form.value.settings.questions_to_show 
+            : null,
+          passing_score: form.value.settings.passing_score || null,
+          show_score_after_submit: form.value.settings.show_score_after_submit,
+          show_correct_answers: form.value.settings.show_correct_answers,
+          welcome_message: form.value.settings.welcome_message || null,
+          submit_message: form.value.settings.submit_message || null,
+          // ═══ CAMPOS ODOO ═══
+          requires_odoo_validation: form.value.settings.requires_odoo_validation || false,
+          odoo_course_name: form.value.settings.odoo_course_name || null,
+          odoo_slide_channel_id: form.value.settings.odoo_slide_channel_id || null,
+          odoo_academic_hours: form.value.settings.odoo_academic_hours || null,
+          odoo_course_type: form.value.settings.odoo_course_type || null,
+        },
         sections: sections.value,
-        questions: questions.value.map(q => ({
-          ...q,
-          id: q.id || undefined, // Solo enviar si existe
-          temp_id: q.temp_id
+        // ═══ Preguntas con opciones completas ═══
+        questions: questions.value.map((q, index) => ({
+          id: q.id || undefined,
+          temp_id: q.temp_id,
+          question_type_id: q.question_type_id,
+          question_text: q.question_text,
+          help_text: q.help_text || null,
+          placeholder: q.placeholder || null,
+          is_required: !!q.is_required,
+          display_order: index,
+          points: parseFloat(q.points) || 0,
+          validation_rules: q.validation_rules || null,
+          config: q.config || null,
+          has_options: !!q.has_options,
+          options: q.options?.map((opt, optIndex) => ({
+            id: opt.id || null,
+            temp_id: opt.temp_id,
+            option_text: opt.option_text,
+            option_value: opt.option_value || opt.option_text,
+            display_order: optIndex,
+            is_correct: !!opt.is_correct,
+            points: parseFloat(opt.points) || 0
+          })) || []
         }))
       }
 
@@ -278,32 +331,35 @@ const questionBankInfo = computed(() => {
   async function updateForm(uuid) {
     saving.value = true
     try {
-      // Preparar settings
       const settings = {
-            is_active: form.value.settings.is_active,
-            is_public: form.value.settings.is_public,
-            requires_login: form.value.settings.requires_login,
-            available_from: form.value.settings.available_from || null,
-            available_until: form.value.settings.available_until || null,
-            time_limit_minutes: form.value.settings.time_limit_minutes || null,
-            allow_multiple_responses: form.value.settings.allow_multiple_responses,
-            show_progress_bar: form.value.settings.show_progress_bar,
-            shuffle_questions: form.value.settings.shuffle_questions,
-            // Nuevos campos
-            use_question_bank: form.value.settings.use_question_bank,
-            questions_to_show: form.value.settings.use_question_bank 
-              ? form.value.settings.questions_to_show 
-              : null,
-            passing_score: form.value.settings.passing_score || null,
-            show_score_after_submit: form.value.settings.show_score_after_submit,
-            show_correct_answers: form.value.settings.show_correct_answers,
-            welcome_message: form.value.settings.welcome_message || null,
-            submit_message: form.value.settings.submit_message || null
-          }
+        is_active: form.value.settings.is_active,
+        is_public: form.value.settings.is_public,
+        requires_login: form.value.settings.requires_login,
+        available_from: form.value.settings.available_from || null,
+        available_until: form.value.settings.available_until || null,
+        time_limit_minutes: form.value.settings.time_limit_minutes || null,
+        allow_multiple_responses: form.value.settings.allow_multiple_responses,
+        show_progress_bar: form.value.settings.show_progress_bar,
+        shuffle_questions: form.value.settings.shuffle_questions,
+        use_question_bank: form.value.settings.use_question_bank,
+        questions_to_show: form.value.settings.use_question_bank 
+          ? form.value.settings.questions_to_show 
+          : null,
+        passing_score: form.value.settings.passing_score || null,
+        show_score_after_submit: form.value.settings.show_score_after_submit,
+        show_correct_answers: form.value.settings.show_correct_answers,
+        welcome_message: form.value.settings.welcome_message || null,
+        submit_message: form.value.settings.submit_message || null,
+        // ═══ CAMPOS ODOO ═══
+        requires_odoo_validation: form.value.settings.requires_odoo_validation || false,
+        odoo_course_name: form.value.settings.odoo_course_name || null,
+        odoo_slide_channel_id: form.value.settings.odoo_slide_channel_id || null,
+        odoo_academic_hours: form.value.settings.odoo_academic_hours || null,
+        odoo_course_type: form.value.settings.odoo_course_type || null,
+      }
 
-      // Preparar preguntas
       const preparedQuestions = questions.value.map((q, index) => ({
-        id: q.id || null, // null si es nueva
+        id: q.id || null,
         temp_id: q.temp_id,
         question_type_id: q.question_type_id,
         question_text: q.question_text,
@@ -373,20 +429,24 @@ const questionBankInfo = computed(() => {
             allow_multiple_responses: !!formData.allow_multiple_responses,
             show_progress_bar: !!formData.show_progress_bar,
             shuffle_questions: !!formData.shuffle_questions,
-            // Nuevos campos
             use_question_bank: !!formData.use_question_bank,
             questions_to_show: formData.questions_to_show,
             passing_score: formData.passing_score,
             show_score_after_submit: !!formData.show_score_after_submit,
             show_correct_answers: !!formData.show_correct_answers,
             welcome_message: formData.welcome_message || '',
-            submit_message: formData.submit_message || ''
+            submit_message: formData.submit_message || '',
+            // ═══ CAMPOS ODOO ═══
+            requires_odoo_validation: !!formData.requires_odoo_validation,
+            odoo_course_name: formData.odoo_course_name || '',
+            odoo_slide_channel_id: formData.odoo_slide_channel_id || null,
+            odoo_academic_hours: formData.odoo_academic_hours || 24,
+            odoo_course_type: formData.odoo_course_type || 'online_ind',
           }
         }
         
         sections.value = secs || []
         
-        // Mapear preguntas con sus opciones
         questions.value = qs.map(q => ({
           id: q.id,
           question_type_id: q.question_type_id,
@@ -410,14 +470,14 @@ const questionBankInfo = computed(() => {
             points: opt.points || 0
           }))
         }))
-        
+
         isDirty.value = false
         return true
       }
-      return false
+      throw new Error(response.error || 'Error al cargar')
     } catch (error) {
       console.error('Error loading form:', error)
-      return false
+      throw error
     } finally {
       loading.value = false
     }

@@ -188,6 +188,11 @@
               >Acceso</button>
               <button 
                 v-if="store.form.form_type === 'EXAM'"
+                :class="{ active: settingsTab === 'odoo' }"
+                @click="settingsTab = 'odoo'"
+              >Odoo / Certificados</button>
+              <button 
+                v-if="store.form.form_type === 'EXAM'"
                 :class="{ active: settingsTab === 'exam' }"
                 @click="settingsTab = 'exam'"
               >Examen</button>
@@ -361,6 +366,39 @@
                   <span class="toggle-slider"></span>
                   <span class="toggle-label">Mostrar respuestas correctas</span>
                 </label>
+              </div>
+            </div>
+
+            <!-- Odoo Tab -->
+            <div v-show="settingsTab === 'odoo'" class="settings-content">
+              <div class="setting-group">
+                <label class="setting-toggle">
+                  <input 
+                    type="checkbox" 
+                    v-model="store.form.settings.requires_odoo_validation"
+                    @change="markDirty"
+                  >
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Requiere validación en Odoo</span>
+                </label>
+                <p class="setting-help">
+                  El alumno deberá ingresar su correo registrado en el campus virtual antes de iniciar el examen.
+                  Al aprobar, se generará automáticamente su certificado.
+                </p>
+              </div>
+
+              <!-- Info box (solo cuando está activado) -->
+              <div v-if="store.form.settings.requires_odoo_validation" 
+                  style="display:flex;gap:14px;padding:16px;background:#eff6ff;border-radius:10px;border:1px solid #bfdbfe;margin-top:8px">
+                <span style="font-size:20px">ℹ️</span>
+                <div style="font-size:13px;color:#1e40af">
+                  <strong style="display:block;margin-bottom:8px">Flujo automático:</strong>
+                  <ol style="margin:0;padding-left:18px">
+                    <li>El sistema buscará el curso en Odoo usando el título del examen</li>
+                    <li>El alumno ingresa su correo y se valida contra el campus virtual</li>
+                    <li>Al aprobar, se genera automáticamente el certificado en Odoo</li>
+                  </ol>
+                </div>
               </div>
             </div>
 
