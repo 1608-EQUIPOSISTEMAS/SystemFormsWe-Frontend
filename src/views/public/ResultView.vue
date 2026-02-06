@@ -264,15 +264,21 @@ function scrollToTop() {
 // QR - Se genera cuando el canvas existe en el DOM
 // ═══════════════════════════════════════════════════════════════
 watch(qrCanvas, async (canvas) => {
-  if (canvas && examResult.value?.odoo?.pdf_url) {
+  if (canvas && examResult.value?.odoo?.certificate_id) {
     await generateQR()
   }
 })
 
 async function generateQR() {
-  if (!qrCanvas.value || !examResult.value?.odoo?.pdf_url) return
+  if (!qrCanvas.value || !examResult.value?.odoo?.certificate_id) return
   try {
-    await QRCode.toCanvas(qrCanvas.value, examResult.value.odoo.pdf_url, {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+    const responseUuid = examResult.value.response_uuid
+    const qrUrl = responseUuid
+      ? `${API_URL}/public/certificate/${responseUuid}`
+      : `${window.location.origin}/verificar/${examResult.value.odoo.certificate_id}`
+
+    await QRCode.toCanvas(qrCanvas.value, qrUrl, {
       width: 120,
       margin: 2,
       color: { dark: '#000F5A', light: '#ffffff' }
