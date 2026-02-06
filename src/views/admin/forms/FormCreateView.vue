@@ -1,148 +1,220 @@
 <!-- frontend/src/views/admin/forms/FormCreateView.vue -->
 <template>
   <div class="form-editor">
-    <!-- Header -->
+    
+    <!-- ═══════════════════════════════════════════
+         HEADER — Paso 1: Tipo + Título + Acciones
+         ═══════════════════════════════════════════ -->
     <header class="editor-header">
       <div class="header-left">
-        <button class="btn-back" @click="handleBack">
-          <i class="bi bi-arrow-left"></i>
+        <button class="btn-back" @click="handleBack" title="Volver">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
         </button>
-        <div class="form-meta">
-          <div class="form-badges">
-            <!-- Selector de tipo -->
-            <div class="type-selector">
-              <button 
-                class="type-option"
-                :class="{ active: store.form.form_type === 'SURVEY' }"
-                @click="store.form.form_type = 'SURVEY'"
-              >
-                <i class="bi bi-clipboard-data"></i>
-                Encuesta
-              </button>
-              <button 
-                class="type-option"
-                :class="{ active: store.form.form_type === 'EXAM' }"
-                @click="store.form.form_type = 'EXAM'"
-              >
-                <i class="bi bi-mortarboard"></i>
-                Examen
-              </button>
-            </div>
-            <!-- Badge de banco de preguntas -->
-            <span v-if="store.form.settings?.use_question_bank" class="badge bank">
-              <i class="bi bi-shuffle"></i>
-              {{ store.form.settings.questions_to_show }}/{{ store.questions?.length }} aleatorias
-            </span>
-          </div>
-          <input
-            type="text"
-            class="title-input"
-            placeholder="Título del formulario"
-            v-model="store.form.title"
-          />
+
+        <!-- Type Toggle -->
+        <div class="type-toggle">
+          <button 
+            :class="['toggle-opt', { active: store.form.form_type === 'SURVEY' }]"
+            @click="store.form.form_type = 'SURVEY'"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            Encuesta
+          </button>
+          <button 
+            :class="['toggle-opt', { active: store.form.form_type === 'EXAM' }]"
+            @click="store.form.form_type = 'EXAM'"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+            Examen
+          </button>
         </div>
+
+        <span class="header-divider"></span>
+
+        <!-- Title inline -->
+        <input
+          type="text"
+          class="title-input"
+          placeholder="Título del formulario..."
+          v-model="store.form.title"
+        />
       </div>
 
       <div class="header-actions">
+        <!-- Bank badge (si activo) -->
+        <span v-if="store.form.settings?.use_question_bank" class="badge-bank">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+          {{ store.form.settings.questions_to_show }}/{{ store.questions?.length }}
+        </span>
+
         <button class="btn-icon" @click="showSettings = true" title="Configuración">
-          <i class="bi bi-gear"></i>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
         </button>
         <button class="btn-icon" @click="showPreview = true" title="Vista previa">
-          <i class="bi bi-eye"></i>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
         <button 
           class="btn-save" 
           @click="handleSave"
           :disabled="!canSave || store.isSaving"
         >
-          <i v-if="store.isSaving" class="bi bi-arrow-repeat spinning"></i>
-          <i v-else class="bi bi-check-lg"></i>
+          <svg v-if="store.isSaving" class="spinning" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+          <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
           {{ store.isSaving ? 'Guardando...' : 'Guardar' }}
         </button>
       </div>
     </header>
 
-    <!-- Main Content -->
+    <!-- ═══════════════════════════════════════════════════
+         CONTEXT BAR — Paso 2: Curso + Config rápida (Exam)
+         ═══════════════════════════════════════════════════ -->
+    <Transition name="slide-down">
+      <div v-if="store.form.form_type === 'EXAM'" class="context-bar">
+        <div class="context-bar-inner">
+          
+          <!-- Curso asociado — PROMINENTE -->
+          <div class="context-field course-field">
+            <label>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+              Curso
+            </label>
+            <select v-model="store.form.course_id" class="context-select">
+              <option value="">Seleccionar curso...</option>
+              <option v-for="c in courses" :key="c.id" :value="c.id">
+                {{ c.name }}
+              </option>
+            </select>
+            <span v-if="!store.form.course_id" class="field-hint warning">Requerido para certificados</span>
+          </div>
+
+          <span class="context-divider"></span>
+
+          <!-- Quick configs -->
+          <div class="context-field">
+            <label>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Tiempo
+            </label>
+            <div class="inline-input-group">
+              <input 
+                type="number" 
+                v-model.number="store.form.settings.time_limit_minutes"
+                min="1"
+                placeholder="∞"
+                class="context-input"
+              >
+              <span class="input-suffix">min</span>
+            </div>
+          </div>
+
+          <div class="context-field">
+            <label>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              Aprobación
+            </label>
+            <div class="inline-input-group">
+              <input 
+                type="number" 
+                v-model.number="store.form.settings.passing_score"
+                min="0"
+                max="100"
+                placeholder="70"
+                class="context-input"
+              >
+              <span class="input-suffix">%</span>
+            </div>
+          </div>
+
+          <!-- Odoo toggle rápido -->
+          <div class="context-field">
+            <label class="context-toggle" title="Genera certificado automáticamente al aprobar">
+              <input type="checkbox" v-model="store.form.settings.requires_odoo_validation">
+              <span class="mini-toggle"></span>
+              <span>Certificado auto</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- ═══════════════════════════════════════════
+         BODY — Sidebar + Canvas
+         ═══════════════════════════════════════════ -->
     <div class="editor-body">
-      <!-- Sidebar -->
+      
+      <!-- Sidebar: Solo tipos de pregunta -->
       <aside class="editor-sidebar">
-        <div class="sidebar-section">
-          <h3>Agregar Pregunta</h3>
-          <div class="question-types">
+        <div class="sidebar-header">
+          <span class="sidebar-title">Preguntas</span>
+        </div>
+        <div class="question-types">
+          <button 
+            v-for="type in store.questionTypes" 
+            :key="type.id"
+            class="type-btn"
+            @click="addQuestion(type.id)"
+            :title="type.description"
+          >
+            <i :class="getTypeIcon(type.code)"></i>
+            <span>{{ type.name }}</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Canvas principal -->
+      <main class="editor-canvas">
+        
+        <!-- Descripción colapsable -->
+        <div class="description-section" :class="{ collapsed: !showDescription && !store.form.description }">
+          <button 
+            v-if="!showDescription && !store.form.description" 
+            class="btn-add-description"
+            @click="showDescription = true"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Agregar descripción
+          </button>
+          <div v-else class="description-editor">
+            <textarea
+              v-model="store.form.description"
+              placeholder="Descripción para los participantes..."
+              rows="2"
+              ref="descriptionRef"
+            ></textarea>
             <button 
-              v-for="type in store.questionTypes" 
-              :key="type.id"
-              class="type-btn"
-              @click="addQuestion(type.id)"
-              :title="type.description"
+              v-if="!store.form.description" 
+              class="btn-remove-desc" 
+              @click="showDescription = false"
+              title="Quitar"
             >
-              <i :class="getTypeIcon(type.code)"></i>
-              <span>{{ type.name }}</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
         </div>
 
-        <div class="sidebar-section" v-if="store.form.form_type === 'EXAM'">
-          <h3>Curso Asociado</h3>
-          <select v-model="store.form.course_id" class="course-select">
-            <option value="">Sin curso</option>
-            <option v-for="c in courses" :key="c.id" :value="c.id">
-              {{ c.name }}
-            </option>
-          </select>
-        </div>
-
-        <div class="sidebar-section">
-          <h3>Resumen</h3>
-          <div class="summary-stats">
-            <div class="stat">
-              <span class="stat-value">{{ store.questions?.length || 0 }}</span>
-              <span class="stat-label">{{ store.form.settings?.use_question_bank ? 'En banco' : 'Preguntas' }}</span>
-            </div>
-            <div class="stat" v-if="store.form.settings?.use_question_bank">
-              <span class="stat-value">{{ store.form.settings.questions_to_show || 0 }}</span>
-              <span class="stat-label">Se muestran</span>
-            </div>
-            <div class="stat" v-if="store.form.form_type === 'EXAM'">
-              <span class="stat-value">{{ totalPoints }}</span>
-              <span class="stat-label">Puntos</span>
-            </div>
+        <!-- Banco de preguntas alert (si activo) -->
+        <Transition name="fade">
+          <div v-if="store.form.settings?.use_question_bank" class="bank-notice">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+            <span>
+              Banco activo — <strong>{{ store.form.settings.questions_to_show }}</strong> de 
+              <strong>{{ store.questions?.length }}</strong> preguntas se mostrarán aleatoriamente
+            </span>
+            <button class="btn-text" @click="showSettings = true; settingsTab = 'exam'">
+              Configurar
+            </button>
           </div>
-        </div>
-      </aside>
-
-      <!-- Main - Questions List -->
-      <main class="editor-main">
-        <!-- Description -->
-        <div class="form-description-card">
-          <label>Descripción del formulario</label>
-          <textarea
-            v-model="store.form.description"
-            placeholder="Añade una descripción para los participantes..."
-            rows="3"
-          ></textarea>
-        </div>
-
-        <!-- Alerta banco de preguntas activo -->
-        <div v-if="store.form.settings?.use_question_bank" class="bank-alert">
-          <i class="bi bi-shuffle"></i>
-          <div class="bank-alert-content">
-            <strong>Banco de preguntas activo</strong>
-            <p>
-              Se seleccionarán <strong>{{ store.form.settings.questions_to_show }}</strong> preguntas 
-              aleatorias de las <strong>{{ store.questions?.length }}</strong> disponibles para cada intento.
-            </p>
-          </div>
-          <button class="btn-configure" @click="showSettings = true; settingsTab = 'exam'">
-            Configurar
-          </button>
-        </div>
+        </Transition>
 
         <!-- Empty State -->
-        <div v-if="!store.hasQuestions" class="empty-questions">
-          <i class="bi bi-plus-circle"></i>
-          <h3>Sin preguntas</h3>
-          <p>Selecciona un tipo de pregunta del panel izquierdo para comenzar</p>
+        <div v-if="!store.hasQuestions" class="empty-state">
+          <div class="empty-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          </div>
+          <p class="empty-title">Agrega tu primera pregunta</p>
+          <p class="empty-subtitle">Selecciona un tipo desde el panel izquierdo</p>
         </div>
 
         <!-- Questions List -->
@@ -166,18 +238,53 @@
       </main>
     </div>
 
-    <!-- Settings Modal -->
-    <Teleport to="body">
-      <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
-        <div class="modal-content settings-modal">
-          <div class="modal-header">
-            <h2>Configuración del Formulario</h2>
-            <button class="btn-close" @click="showSettings = false">
-              <i class="bi bi-x-lg"></i>
-            </button>
+    <!-- ═══════════════════════════════════════════
+         BOTTOM BAR — Resumen flotante
+         ═══════════════════════════════════════════ -->
+    <Transition name="slide-up">
+      <div v-if="store.hasQuestions" class="bottom-bar">
+        <div class="bottom-bar-inner">
+          <div class="stats-row">
+            <div class="stat-chip">
+              <span class="stat-num">{{ store.questions?.length || 0 }}</span>
+              <span class="stat-txt">{{ store.form.settings?.use_question_bank ? 'en banco' : 'preguntas' }}</span>
+            </div>
+            <div v-if="store.form.settings?.use_question_bank" class="stat-chip accent">
+              <span class="stat-num">{{ store.form.settings.questions_to_show || 0 }}</span>
+              <span class="stat-txt">se muestran</span>
+            </div>
+            <div v-if="store.form.form_type === 'EXAM'" class="stat-chip">
+              <span class="stat-num">{{ totalPoints }}</span>
+              <span class="stat-txt">puntos</span>
+            </div>
           </div>
-          <div class="modal-body">
-            <div class="settings-tabs">
+
+          <!-- Validación rápida -->
+          <div v-if="!canSave" class="save-hint">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span v-if="!store.form?.title?.trim()">Falta el título</span>
+            <span v-else-if="!store.hasQuestions">Agrega al menos una pregunta</span>
+            <span v-else-if="!questionBankValid">Configura el banco de preguntas</span>
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <!-- ═══════════════════════════════════════════
+         SETTINGS MODAL
+         ═══════════════════════════════════════════ -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
+          <div class="modal-panel settings-panel">
+            <div class="modal-top">
+              <h2>Configuración</h2>
+              <button class="btn-close" @click="showSettings = false">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div class="modal-tabs">
               <button 
                 :class="{ active: settingsTab === 'general' }"
                 @click="settingsTab = 'general'"
@@ -188,342 +295,325 @@
               >Acceso</button>
               <button 
                 v-if="store.form.form_type === 'EXAM'"
-                :class="{ active: settingsTab === 'odoo' }"
-                @click="settingsTab = 'odoo'"
-              >Odoo / Certificados</button>
-              <button 
-                v-if="store.form.form_type === 'EXAM'"
                 :class="{ active: settingsTab === 'exam' }"
                 @click="settingsTab = 'exam'"
               >Examen</button>
+              <button 
+                v-if="store.form.form_type === 'EXAM'"
+                :class="{ active: settingsTab === 'odoo' }"
+                @click="settingsTab = 'odoo'"
+              >Certificados</button>
               <button 
                 :class="{ active: settingsTab === 'messages' }"
                 @click="settingsTab = 'messages'"
               >Mensajes</button>
             </div>
 
-            <!-- General Tab -->
-            <div v-show="settingsTab === 'general'" class="settings-content">
-              <div class="setting-group">
-                <label class="setting-toggle">
-                  <input type="checkbox" v-model="store.form.settings.is_active">
-                  <span class="toggle-slider"></span>
-                  <span class="toggle-label">Formulario activo</span>
-                </label>
-                <p class="setting-help">Cuando está desactivado, nadie puede responder</p>
-              </div>
-
-              <div class="setting-group">
-                <label class="setting-toggle">
-                  <input type="checkbox" v-model="store.form.settings.show_progress_bar">
-                  <span class="toggle-slider"></span>
-                  <span class="toggle-label">Mostrar barra de progreso</span>
-                </label>
-              </div>
-
-              <div class="setting-group">
-                <label class="setting-toggle">
-                  <input type="checkbox" v-model="store.form.settings.shuffle_questions">
-                  <span class="toggle-slider"></span>
-                  <span class="toggle-label">Mezclar preguntas</span>
-                </label>
-                <p class="setting-help">Cambia el orden de las preguntas en cada intento</p>
-              </div>
-            </div>
-
-            <!-- Access Tab -->
-            <div v-show="settingsTab === 'access'" class="settings-content">
-              <div class="setting-group">
-                <label class="setting-toggle">
-                  <input type="checkbox" v-model="store.form.settings.requires_login">
-                  <span class="toggle-slider"></span>
-                  <span class="toggle-label">Requiere inicio de sesión</span>
-                </label>
-              </div>
-
-              <div class="setting-group" v-if="store.form.form_type === 'SURVEY'">
-                <label class="setting-toggle">
-                  <input type="checkbox" v-model="store.form.settings.is_public">
-                  <span class="toggle-slider"></span>
-                  <span class="toggle-label">Formulario público</span>
-                </label>
-              </div>
-
-              <div class="setting-row">
-                <div class="setting-group">
-                  <label>Disponible desde</label>
-                  <input type="datetime-local" v-model="store.form.settings.available_from">
+            <div class="modal-scroll">
+              
+              <!-- General -->
+              <div v-show="settingsTab === 'general'" class="tab-content">
+                <div class="field-toggle">
+                  <label>
+                    <input type="checkbox" v-model="store.form.settings.is_active">
+                    <span class="toggle-track"></span>
+                    Formulario activo
+                  </label>
+                  <p class="field-hint">Cuando está desactivado, nadie puede responder</p>
                 </div>
-                <div class="setting-group">
-                  <label>Disponible hasta</label>
-                  <input type="datetime-local" v-model="store.form.settings.available_until">
+                <div class="field-toggle">
+                  <label>
+                    <input type="checkbox" v-model="store.form.settings.show_progress_bar">
+                    <span class="toggle-track"></span>
+                    Barra de progreso
+                  </label>
+                </div>
+                <div class="field-toggle">
+                  <label>
+                    <input type="checkbox" v-model="store.form.settings.shuffle_questions">
+                    <span class="toggle-track"></span>
+                    Mezclar orden de preguntas
+                  </label>
+                  <p class="field-hint">Orden diferente en cada intento</p>
                 </div>
               </div>
-            </div>
 
-            <!-- Exam Tab -->
-            <div v-show="settingsTab === 'exam'" class="settings-content">
-              <div class="setting-group">
-                <label>Tiempo límite (minutos)</label>
-                <input 
-                  type="number" 
-                  v-model.number="store.form.settings.time_limit_minutes"
-                  min="1"
-                  placeholder="Sin límite"
-                >
-                <p class="setting-help">Dejar vacío para sin límite de tiempo</p>
-              </div>
-
-              <div class="setting-group">
-                <label>Puntaje mínimo para aprobar (%)</label>
-                <input 
-                  type="number" 
-                  v-model.number="store.form.settings.passing_score"
-                  min="0"
-                  max="100"
-                  placeholder="70"
-                >
-              </div>
-
-              <hr class="setting-divider">
-
-              <!-- Banco de Preguntas -->
-              <div class="setting-group bank-section">
-                <div class="bank-header">
-                  <i class="bi bi-shuffle"></i>
-                  <h4>Banco de Preguntas Aleatorias</h4>
+              <!-- Acceso -->
+              <div v-show="settingsTab === 'access'" class="tab-content">
+                <div class="field-toggle">
+                  <label>
+                    <input type="checkbox" v-model="store.form.settings.requires_login">
+                    <span class="toggle-track"></span>
+                    Requiere inicio de sesión
+                  </label>
                 </div>
-                
-                <label class="setting-toggle">
-                  <input 
-                    type="checkbox" 
-                    v-model="store.form.settings.use_question_bank" 
-                    @change="onQuestionBankToggle"
-                  >
-                  <span class="toggle-slider"></span>
-                  <span class="toggle-label">Activar selección aleatoria</span>
-                </label>
-                <p class="setting-help">
-                  El sistema seleccionará preguntas al azar del banco para cada intento
-                </p>
+                <div class="field-toggle" v-if="store.form.form_type === 'SURVEY'">
+                  <label>
+                    <input type="checkbox" v-model="store.form.settings.is_public">
+                    <span class="toggle-track"></span>
+                    Formulario público
+                  </label>
+                </div>
+                <div class="field-row">
+                  <div class="field-group">
+                    <label>Disponible desde</label>
+                    <input type="datetime-local" v-model="store.form.settings.available_from">
+                  </div>
+                  <div class="field-group">
+                    <label>Disponible hasta</label>
+                    <input type="datetime-local" v-model="store.form.settings.available_until">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Examen -->
+              <div v-show="settingsTab === 'exam'" class="tab-content">
+                <p class="tab-note">Tiempo y puntaje también se pueden editar desde la barra superior.</p>
+
+                <div class="field-group">
+                  <label>Tiempo límite</label>
+                  <div class="input-with-suffix">
+                    <input 
+                      type="number" 
+                      v-model.number="store.form.settings.time_limit_minutes"
+                      min="1"
+                      placeholder="Sin límite"
+                    >
+                    <span>minutos</span>
+                  </div>
+                </div>
+
+                <div class="field-group">
+                  <label>Puntaje mínimo para aprobar</label>
+                  <div class="input-with-suffix">
+                    <input 
+                      type="number" 
+                      v-model.number="store.form.settings.passing_score"
+                      min="0" max="100"
+                      placeholder="70"
+                    >
+                    <span>%</span>
+                  </div>
+                </div>
+
+                <hr class="divider">
+
+                <!-- Banco de preguntas -->
+                <div class="bank-section">
+                  <div class="bank-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+                    Banco de preguntas aleatorias
+                  </div>
+
+                  <div class="field-toggle">
+                    <label>
+                      <input 
+                        type="checkbox" 
+                        v-model="store.form.settings.use_question_bank"
+                        @change="onQuestionBankToggle"
+                      >
+                      <span class="toggle-track"></span>
+                      Selección aleatoria
+                    </label>
+                    <p class="field-hint">Cada intento recibe preguntas diferentes</p>
+                  </div>
+
+                  <Transition name="fade">
+                    <div v-if="store.form.settings.use_question_bank" class="bank-config">
+                      <div class="bank-flow">
+                        <div class="bank-num">
+                          <span class="bank-value">{{ store.questions?.length || 0 }}</span>
+                          <span class="bank-label">en banco</span>
+                        </div>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="bank-arrow"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        <div class="bank-num highlight">
+                          <input 
+                            type="number"
+                            v-model.number="store.form.settings.questions_to_show"
+                            :max="store.questions?.length || 0"
+                            min="1"
+                            class="bank-input"
+                          >
+                          <span class="bank-label">se muestran</span>
+                        </div>
+                      </div>
+
+                      <div v-if="!questionBankValid" class="inline-warning">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <span v-if="!store.form.settings.questions_to_show">Ingresa cuántas preguntas mostrar</span>
+                        <span v-else>No puedes mostrar más de las que hay en el banco</span>
+                      </div>
+                    </div>
+                  </Transition>
+                </div>
+
+                <hr class="divider">
+
+                <div class="field-toggle">
+                  <label>
+                    <input type="checkbox" v-model="store.form.settings.show_score_after_submit">
+                    <span class="toggle-track"></span>
+                    Mostrar puntaje al finalizar
+                  </label>
+                </div>
+                <div class="field-toggle">
+                  <label>
+                    <input type="checkbox" v-model="store.form.settings.show_correct_answers">
+                    <span class="toggle-track"></span>
+                    Mostrar respuestas correctas
+                  </label>
+                </div>
+              </div>
+
+              <!-- Certificados / Odoo -->
+              <div v-show="settingsTab === 'odoo'" class="tab-content">
+                <div class="field-toggle">
+                  <label>
+                    <input type="checkbox" v-model="store.form.settings.requires_odoo_validation" @change="markDirty">
+                    <span class="toggle-track"></span>
+                    Validación y certificado automático
+                  </label>
+                  <p class="field-hint">
+                    El alumno ingresa su correo del campus virtual. Al aprobar, se genera el certificado en Odoo automáticamente.
+                  </p>
+                </div>
 
                 <Transition name="fade">
-                  <div v-if="store.form.settings.use_question_bank" class="bank-config">
-                    <div class="bank-stats">
-                      <div class="stat-item">
-                        <span class="stat-value">{{ store.questions?.length || 0 }}</span>
-                        <span class="stat-label">Preguntas en banco</span>
-                      </div>
-                      <div class="stat-arrow">
-                        <i class="bi bi-arrow-right"></i>
-                      </div>
-                      <div class="stat-item highlight">
-                        <input 
-                          type="number" 
-                          v-model.number="store.form.settings.questions_to_show"
-                          :max="store.questions?.length || 0"
-                          min="1"
-                          class="stat-input"
-                        >
-                        <span class="stat-label">Se mostrarán</span>
-                      </div>
-                    </div>
-
-                    <div v-if="!questionBankValid" class="bank-warning">
-                      <i class="bi bi-exclamation-triangle"></i>
-                      <span v-if="!store.form.settings.questions_to_show">
-                        Ingresa el número de preguntas a mostrar
-                      </span>
-                      <span v-else-if="store.form.settings.questions_to_show > (store.questions?.length || 0)">
-                        No puedes mostrar más preguntas de las que hay en el banco
-                      </span>
-                    </div>
-
-                    <div v-else class="bank-info">
-                      <i class="bi bi-info-circle"></i>
-                      <span>
-                        Cada estudiante recibirá <strong>{{ store.form.settings.questions_to_show }}</strong> preguntas 
-                        diferentes seleccionadas al azar
-                      </span>
-                    </div>
+                  <div v-if="store.form.settings.requires_odoo_validation" class="info-box">
+                    <div class="info-box-title">Flujo automático</div>
+                    <ol>
+                      <li>Sistema busca el curso en Odoo por el título del examen</li>
+                      <li>Alumno ingresa correo → se valida en el campus</li>
+                      <li>Al aprobar → certificado generado automáticamente</li>
+                    </ol>
                   </div>
                 </Transition>
               </div>
 
-              <hr class="setting-divider">
-
-              <div class="setting-group">
-                <label class="setting-toggle">
-                  <input type="checkbox" v-model="store.form.settings.show_score_after_submit">
-                  <span class="toggle-slider"></span>
-                  <span class="toggle-label">Mostrar puntaje al finalizar</span>
-                </label>
+              <!-- Mensajes -->
+              <div v-show="settingsTab === 'messages'" class="tab-content">
+                <div class="field-group">
+                  <label>Mensaje de bienvenida</label>
+                  <textarea 
+                    v-model="store.form.settings.welcome_message"
+                    rows="3"
+                    placeholder="Se muestra antes de comenzar..."
+                  ></textarea>
+                </div>
+                <div class="field-group">
+                  <label>Mensaje al enviar</label>
+                  <textarea 
+                    v-model="store.form.settings.submit_message"
+                    rows="3"
+                    placeholder="Gracias por completar el formulario."
+                  ></textarea>
+                </div>
               </div>
 
-              <div class="setting-group">
-                <label class="setting-toggle">
-                  <input type="checkbox" v-model="store.form.settings.show_correct_answers">
-                  <span class="toggle-slider"></span>
-                  <span class="toggle-label">Mostrar respuestas correctas</span>
-                </label>
-              </div>
             </div>
 
-            <!-- Odoo Tab -->
-            <div v-show="settingsTab === 'odoo'" class="settings-content">
-              <div class="setting-group">
-                <label class="setting-toggle">
-                  <input 
-                    type="checkbox" 
-                    v-model="store.form.settings.requires_odoo_validation"
-                    @change="markDirty"
+            <div class="modal-bottom">
+              <button class="btn-secondary" @click="showSettings = false">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ═══════════════════════════════════════════
+         PREVIEW MODAL
+         ═══════════════════════════════════════════ -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="showPreview" class="modal-overlay" @click.self="showPreview = false">
+          <div class="modal-panel preview-panel">
+            <div class="modal-top">
+              <h2>Vista previa</h2>
+              <button class="btn-close" @click="showPreview = false">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="modal-scroll preview-scroll">
+              <div class="preview-wrapper">
+                <div v-if="store.form.settings?.use_question_bank" class="preview-bank-note">
+                  Vista previa muestra todas. En el examen real: {{ store.form.settings.questions_to_show }} aleatorias.
+                </div>
+                <div class="preview-form">
+                  <h1>{{ store.form.title || 'Sin título' }}</h1>
+                  <p v-if="store.form.description" class="preview-desc">{{ store.form.description }}</p>
+                  <div 
+                    v-for="(q, i) in store.questions" 
+                    :key="q.temp_id || q.id"
+                    class="preview-q"
                   >
-                  <span class="toggle-slider"></span>
-                  <span class="toggle-label">Requiere validación en Odoo</span>
-                </label>
-                <p class="setting-help">
-                  El alumno deberá ingresar su correo registrado en el campus virtual antes de iniciar el examen.
-                  Al aprobar, se generará automáticamente su certificado.
-                </p>
-              </div>
-
-              <!-- Info box (solo cuando está activado) -->
-              <div v-if="store.form.settings.requires_odoo_validation" 
-                  style="display:flex;gap:14px;padding:16px;background:#eff6ff;border-radius:10px;border:1px solid #bfdbfe;margin-top:8px">
-                <span style="font-size:20px">ℹ️</span>
-                <div style="font-size:13px;color:#1e40af">
-                  <strong style="display:block;margin-bottom:8px">Flujo automático:</strong>
-                  <ol style="margin:0;padding-left:18px">
-                    <li>El sistema buscará el curso en Odoo usando el título del examen</li>
-                    <li>El alumno ingresa su correo y se valida contra el campus virtual</li>
-                    <li>Al aprobar, se genera automáticamente el certificado en Odoo</li>
-                  </ol>
-                </div>
-              </div>
-            </div>
-
-            <!-- Messages Tab -->
-            <div v-show="settingsTab === 'messages'" class="settings-content">
-              <div class="setting-group">
-                <label>Mensaje de bienvenida</label>
-                <textarea 
-                  v-model="store.form.settings.welcome_message"
-                  rows="3"
-                  placeholder="Se muestra antes de comenzar..."
-                ></textarea>
-              </div>
-
-              <div class="setting-group">
-                <label>Mensaje al enviar</label>
-                <textarea 
-                  v-model="store.form.settings.submit_message"
-                  rows="3"
-                  placeholder="Gracias por completar el formulario."
-                ></textarea>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn-secondary" @click="showSettings = false">Cerrar</button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- Preview Modal -->
-    <Teleport to="body">
-      <div v-if="showPreview" class="modal-overlay" @click.self="showPreview = false">
-        <div class="modal-content preview-modal">
-          <div class="modal-header">
-            <h2>Vista Previa</h2>
-            <button class="btn-close" @click="showPreview = false">
-              <i class="bi bi-x-lg"></i>
-            </button>
-          </div>
-          <div class="modal-body preview-body">
-            <div class="preview-container">
-              <div v-if="store.form.settings?.use_question_bank" class="preview-bank-notice">
-                <i class="bi bi-shuffle"></i>
-                <span>
-                  Vista previa muestra todas las preguntas. 
-                  En el examen real se mostrarán {{ store.form.settings.questions_to_show }} aleatorias.
-                </span>
-              </div>
-              
-              <div class="preview-form">
-                <h1>{{ store.form.title || 'Sin título' }}</h1>
-                <p v-if="store.form.description">{{ store.form.description }}</p>
-                
-                <div 
-                  v-for="(q, i) in store.questions" 
-                  :key="q.temp_id || q.id"
-                  class="preview-question"
-                >
-                  <div class="question-header">
-                    <span class="question-number">{{ i + 1 }}</span>
-                    <span class="question-text">{{ q.question_text || 'Pregunta sin texto' }}</span>
-                    <span v-if="q.is_required" class="required-mark">*</span>
-                  </div>
-                  
-                  <div class="question-preview-input">
-                    <template v-if="['TEXT', 'EMAIL'].includes(q.type_code)">
-                      <input type="text" :placeholder="q.placeholder || 'Tu respuesta'" disabled>
-                    </template>
-                    <template v-else-if="q.type_code === 'TEXTAREA'">
-                      <textarea :placeholder="q.placeholder || 'Tu respuesta'" disabled></textarea>
-                    </template>
-                    <template v-else-if="q.type_code === 'RADIO'">
-                      <div v-for="opt in q.options" :key="opt.temp_id || opt.id" class="radio-option">
-                        <input type="radio" disabled>
-                        <span>{{ opt.option_text }}</span>
-                      </div>
-                    </template>
-                    <template v-else-if="q.type_code === 'CHECKBOX'">
-                      <div v-for="opt in q.options" :key="opt.temp_id || opt.id" class="checkbox-option">
-                        <input type="checkbox" disabled>
-                        <span>{{ opt.option_text }}</span>
-                      </div>
-                    </template>
-                    <template v-else-if="q.type_code === 'SELECT'">
-                      <select disabled>
-                        <option>Seleccionar...</option>
-                        <option v-for="opt in q.options" :key="opt.temp_id || opt.id">{{ opt.option_text }}</option>
-                      </select>
-                    </template>
-                    <template v-else>
-                      <input type="text" placeholder="Respuesta" disabled>
-                    </template>
+                    <div class="pq-header">
+                      <span class="pq-num">{{ i + 1 }}</span>
+                      <span class="pq-text">{{ q.question_text || 'Pregunta sin texto' }}</span>
+                      <span v-if="q.is_required" class="pq-required">*</span>
+                    </div>
+                    <div class="pq-input">
+                      <template v-if="['TEXT', 'EMAIL'].includes(q.type_code)">
+                        <input type="text" :placeholder="q.placeholder || 'Tu respuesta'" disabled>
+                      </template>
+                      <template v-else-if="q.type_code === 'TEXTAREA'">
+                        <textarea :placeholder="q.placeholder || 'Tu respuesta'" disabled></textarea>
+                      </template>
+                      <template v-else-if="q.type_code === 'RADIO'">
+                        <div v-for="opt in q.options" :key="opt.temp_id || opt.id" class="pq-option">
+                          <input type="radio" disabled>
+                          <span>{{ opt.option_text }}</span>
+                        </div>
+                      </template>
+                      <template v-else-if="q.type_code === 'CHECKBOX'">
+                        <div v-for="opt in q.options" :key="opt.temp_id || opt.id" class="pq-option">
+                          <input type="checkbox" disabled>
+                          <span>{{ opt.option_text }}</span>
+                        </div>
+                      </template>
+                      <template v-else-if="q.type_code === 'SELECT'">
+                        <select disabled>
+                          <option>Seleccionar...</option>
+                          <option v-for="opt in q.options" :key="opt.temp_id || opt.id">{{ opt.option_text }}</option>
+                        </select>
+                      </template>
+                      <template v-else>
+                        <input type="text" placeholder="Respuesta" disabled>
+                      </template>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </Transition>
     </Teleport>
 
-    <!-- Unsaved Changes Modal -->
+    <!-- Unsaved Changes -->
     <Teleport to="body">
-      <div v-if="showUnsavedModal" class="modal-overlay">
-        <div class="modal-content unsaved-modal">
-          <div class="modal-header">
-            <h2>Cambios sin guardar</h2>
-          </div>
-          <div class="modal-body">
-            <p>Tienes cambios sin guardar. ¿Qué deseas hacer?</p>
-          </div>
-          <div class="modal-footer">
-            <button class="btn-secondary" @click="discardAndLeave">Descartar</button>
-            <button class="btn-primary" @click="saveAndLeave">Guardar y salir</button>
+      <Transition name="modal">
+        <div v-if="showUnsavedModal" class="modal-overlay">
+          <div class="modal-panel unsaved-panel">
+            <div class="modal-top">
+              <h2>Cambios sin guardar</h2>
+            </div>
+            <div class="unsaved-body">
+              <p>¿Qué deseas hacer con los cambios pendientes?</p>
+            </div>
+            <div class="modal-bottom">
+              <button class="btn-secondary" @click="discardAndLeave">Descartar</button>
+              <button class="btn-primary" @click="saveAndLeave">Guardar y salir</button>
+            </div>
           </div>
         </div>
-      </div>
+      </Transition>
     </Teleport>
 
     <!-- Toast -->
     <Transition name="toast">
-      <div v-if="toast.show" class="toast" :class="toast.type">
-        <i :class="toast.type === 'success' ? 'bi bi-check-circle' : 'bi bi-exclamation-circle'"></i>
+      <div v-if="toast.show" :class="['toast', toast.type]">
+        <svg v-if="toast.type === 'success'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         {{ toast.message }}
       </div>
     </Transition>
@@ -531,7 +621,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { useFormBuilderStore } from '@/stores/formBuilder'
 import QuestionCard from '@/components/forms/QuestionCard.vue'
@@ -545,8 +635,10 @@ const courses = ref([])
 const showSettings = ref(false)
 const showPreview = ref(false)
 const showUnsavedModal = ref(false)
+const showDescription = ref(false)
 const settingsTab = ref('general')
 const toast = ref({ show: false, message: '', type: 'success' })
+const descriptionRef = ref(null)
 
 let pendingNavigation = null
 
@@ -610,27 +702,26 @@ function moveDown(index) {
   if (index < store.questions.length - 1) store.moveQuestion(index, index + 1)
 }
 
+function markDirty() {
+  store.isDirty = true
+}
+
 async function handleSave() {
   if (!canSave.value) {
     showToast('Completa el título y agrega al menos una pregunta', 'error')
     return
   }
-
   const emptyQuestion = store.questions.find(q => !q.question_text.trim())
   if (emptyQuestion) {
     showToast('Todas las preguntas deben tener texto', 'error')
     return
   }
-
   try {
     const result = await store.saveForm()
-    showToast('Formulario guardado exitosamente', 'success')
-    
-    setTimeout(() => {
-      router.push(`/admin/forms/${result.uuid}`)
-    }, 1500)
+    showToast('Formulario guardado', 'success')
+    setTimeout(() => { router.push(`/admin/forms/${result.uuid}`) }, 1500)
   } catch (error) {
-    showToast(error.message || 'Error al guardar el formulario', 'error')
+    showToast(error.message || 'Error al guardar', 'error')
   }
 }
 
@@ -646,19 +737,13 @@ function handleBack() {
 async function saveAndLeave() {
   await handleSave()
   showUnsavedModal.value = false
-  if (pendingNavigation) {
-    pendingNavigation()
-    pendingNavigation = null
-  }
+  if (pendingNavigation) { pendingNavigation(); pendingNavigation = null }
 }
 
 function discardAndLeave() {
   store.isDirty = false
   showUnsavedModal.value = false
-  if (pendingNavigation) {
-    pendingNavigation()
-    pendingNavigation = null
-  }
+  if (pendingNavigation) { pendingNavigation(); pendingNavigation = null }
 }
 
 function showToast(message, type = 'success') {
@@ -667,34 +752,26 @@ function showToast(message, type = 'success') {
 }
 
 function handleBeforeUnload(e) {
-  if (store.isDirty) {
-    e.preventDefault()
-    e.returnValue = ''
-  }
+  if (store.isDirty) { e.preventDefault(); e.returnValue = '' }
 }
 
-// Navigation guard
 onBeforeRouteLeave((to, from, next) => {
   if (store.isDirty) {
     showUnsavedModal.value = true
     pendingNavigation = () => next()
     next(false)
-  } else {
-    next()
-  }
+  } else { next() }
 })
 
 onMounted(async () => {
   store.resetForm()
   await store.loadQuestionTypes()
-  
   try {
     const response = await courseService.list()
     courses.value = response.data?.courses || []
   } catch (error) {
     console.error('Error cargando cursos:', error)
   }
-  
   window.addEventListener('beforeunload', handleBeforeUnload)
 })
 
@@ -704,18 +781,50 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.form-editor {
-  min-height: 100vh;
-  background: #f8fafc;
+/* ══════════════════════════════════════
+   Design Tokens
+   ══════════════════════════════════════ */
+:root {
+  --c-bg: #fafafa;
+  --c-surface: #ffffff;
+  --c-border: #e8e8e8;
+  --c-border-subtle: #f0f0f0;
+  --c-text-1: #111111;
+  --c-text-2: #555555;
+  --c-text-3: #888888;
+  --c-primary: #111111;
+  --c-primary-soft: #f5f5f5;
+  --c-accent: #4f46e5;
+  --c-accent-soft: #eef2ff;
+  --c-warning: #f59e0b;
+  --c-warning-soft: #fffbeb;
+  --c-danger: #ef4444;
+  --c-success: #10b981;
+  --radius-s: 6px;
+  --radius-m: 8px;
+  --radius-l: 12px;
 }
 
+* { box-sizing: border-box; }
+
+.form-editor {
+  min-height: 100vh;
+  background: var(--c-bg);
+  color: var(--c-text-1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+}
+
+/* ══════════════════════════════════════
+   Header
+   ══════════════════════════════════════ */
 .editor-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  background: var(--c-surface);
+  border-bottom: 1px solid var(--c-border);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -724,347 +833,532 @@ onBeforeUnmount(() => {
 .header-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   flex: 1;
+  min-width: 0;
 }
 
 .btn-back {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 8px;
-  background: #f3f4f6;
-  color: #374151;
-  cursor: pointer;
-}
-
-.btn-back:hover { background: #e5e7eb; }
-
-.form-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1;
-}
-
-.form-badges {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.type-selector {
-  display: flex;
-  background: #f3f4f6;
-  border-radius: 8px;
-  padding: 3px;
-}
-
-.type-option {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   background: transparent;
-  color: #6b7280;
-  font-size: 0.875rem;
-  font-weight: 500;
+  color: var(--c-text-2);
   cursor: pointer;
+  flex-shrink: 0;
   transition: all 0.15s;
 }
+.btn-back:hover { background: var(--c-primary-soft); color: var(--c-text-1); }
 
-.type-option.active {
-  background: white;
-  color: #001845;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+.type-toggle {
+  display: flex;
+  background: #f0f0f0;
+  border-radius: var(--radius-m);
+  padding: 3px;
+  flex-shrink: 0;
+  border: 1px solid var(--c-border);
 }
 
-.type-option:hover:not(.active) { color: #374151; }
-
-.badge {
-  display: inline-flex;
+.toggle-opt {
+  display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 12px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  padding: 6px 16px;
+  border: none;
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--c-text-3);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
 }
 
-.badge.bank { background: #e0e7ff; color: #4338ca; }
+.toggle-opt.active {
+  background: var(--c-primary);
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+
+.toggle-opt:not(.active):hover { color: var(--c-text-1); background: rgba(0,0,0,0.04); }
+
+.header-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--c-border);
+  flex-shrink: 0;
+}
 
 .title-input {
   border: none;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111827;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--c-text-1);
   background: transparent;
   outline: none;
   width: 100%;
+  min-width: 0;
 }
-
-.title-input::placeholder { color: #9ca3af; }
+.title-input::placeholder { color: var(--c-text-3); font-weight: 400; }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.badge-bank {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--c-accent-soft);
+  color: var(--c-accent);
 }
 
 .btn-icon {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: white;
-  color: #6b7280;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-m);
+  background: var(--c-surface);
+  color: var(--c-text-3);
   cursor: pointer;
+  transition: all 0.15s;
 }
-
-.btn-icon:hover {
-  background: #f9fafb;
-  color: #111827;
-}
+.btn-icon:hover { color: var(--c-text-1); border-color: var(--c-text-3); }
 
 .btn-save {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
+  gap: 7px;
+  padding: 8px 18px;
   border: none;
-  border-radius: 8px;
-  background: #001845;
+  border-radius: var(--radius-m);
+  background: var(--c-primary);
   color: white;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
+  transition: all 0.15s;
 }
-
-.btn-save:hover:not(:disabled) { background: #002d6e; }
-.btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-save:hover:not(:disabled) { opacity: 0.85; }
+.btn-save:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .spinning { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ══════════════════════════════════════
+   Context Bar (Exam Config)
+   ══════════════════════════════════════ */
+.context-bar {
+  background: var(--c-surface);
+  border-bottom: 1px solid var(--c-border);
+  padding: 0 20px;
+}
+
+.context-bar-inner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 0;
+  max-width: 1320px;
+  margin: 0 auto;
+  overflow-x: auto;
+}
+
+.context-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.context-field > label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--c-text-3);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.course-field {
+  flex: 1;
+  min-width: 200px;
+}
+
+.context-select {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-s);
+  font-size: 13px;
+  background: var(--c-surface);
+  color: var(--c-text-1);
+  min-width: 180px;
+}
+.context-select:focus { outline: none; border-color: var(--c-text-3); }
+
+.field-hint {
+  font-size: 11px;
+  color: var(--c-text-3);
+  margin: 0;
+}
+.field-hint.warning { color: var(--c-warning); }
+
+.context-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--c-border);
+  flex-shrink: 0;
+}
+
+.inline-input-group {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-s);
+  overflow: hidden;
+}
+
+.context-input {
+  width: 56px;
+  padding: 5px 8px;
+  border: none;
+  font-size: 13px;
+  text-align: center;
+  background: transparent;
+  color: var(--c-text-1);
+}
+.context-input:focus { outline: none; }
+.context-input::placeholder { color: var(--c-text-3); }
+
+.input-suffix {
+  padding: 5px 8px;
+  font-size: 12px;
+  color: var(--c-text-3);
+  background: var(--c-primary-soft);
+  border-left: 1px solid var(--c-border);
+}
+
+.context-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--c-text-2);
+  white-space: nowrap;
+}
+.context-toggle input { display: none; }
+
+.mini-toggle {
+  width: 36px;
+  height: 20px;
+  background: #c5c9d0;
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.25s ease;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+.mini-toggle::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+.context-toggle input:checked + .mini-toggle { background: #10b981; }
+.context-toggle input:checked + .mini-toggle::after { transform: translateX(16px); }
+
+/* Slide transitions */
+.slide-down-enter-active, .slide-down-leave-active { transition: all 0.25s ease; }
+.slide-down-enter-from, .slide-down-leave-to { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; }
+.slide-down-enter-to, .slide-down-leave-from { max-height: 80px; }
+
+/* ══════════════════════════════════════
+   Body Layout
+   ══════════════════════════════════════ */
 .editor-body {
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 24px;
-  padding: 24px;
-  max-width: 1400px;
+  grid-template-columns: 220px 1fr;
+  gap: 0;
+  max-width: 1320px;
   margin: 0 auto;
+  min-height: calc(100vh - 120px);
 }
 
+/* ══════════════════════════════════════
+   Sidebar
+   ══════════════════════════════════════ */
 .editor-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  border-right: 1px solid var(--c-border);
+  background: var(--c-surface);
+  padding: 16px;
+  position: sticky;
+  top: 57px;
+  height: calc(100vh - 57px);
+  overflow-y: auto;
 }
 
-.sidebar-section {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 20px;
+.sidebar-header {
+  margin-bottom: 12px;
 }
 
-.sidebar-section h3 {
-  margin: 0 0 16px 0;
-  font-size: 0.875rem;
+.sidebar-title {
+  font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--c-text-3);
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .question-types {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
 }
 
 .type-btn {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: white;
-  color: #374151;
-  font-size: 0.875rem;
+  gap: 10px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--radius-s);
+  background: transparent;
+  color: var(--c-text-2);
+  font-size: 13px;
   cursor: pointer;
   text-align: left;
+  transition: all 0.12s;
+}
+.type-btn:hover { background: var(--c-primary-soft); color: var(--c-text-1); }
+.type-btn i { width: 18px; color: var(--c-text-3); font-size: 14px; }
+.type-btn:hover i { color: var(--c-text-1); }
+
+/* ══════════════════════════════════════
+   Canvas (Main)
+   ══════════════════════════════════════ */
+.editor-canvas {
+  padding: 24px 32px;
+  max-width: 780px;
 }
 
-.type-btn:hover {
-  background: #f3f4f6;
-  border-color: #001845;
-  color: #001845;
-}
+/* Description */
+.description-section.collapsed { margin-bottom: 0; }
 
-.type-btn i { width: 20px; color: #6b7280; }
-
-.course-select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-}
-
-.summary-stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
+.btn-add-description {
+  display: inline-flex;
   align-items: center;
-  padding: 12px;
-  background: #f9fafb;
-  border-radius: 8px;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px dashed var(--c-border);
+  border-radius: var(--radius-m);
+  background: transparent;
+  color: var(--c-text-3);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 16px;
+}
+.btn-add-description:hover { border-color: var(--c-text-3); color: var(--c-text-2); }
+
+.description-editor {
+  position: relative;
+  margin-bottom: 16px;
 }
 
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #001845;
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  color: #6b7280;
-  text-align: center;
-}
-
-.editor-main {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.form-description-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 20px;
-}
-
-.form-description-card label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 8px;
-}
-
-.form-description-card textarea {
+.description-editor textarea {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  resize: vertical;
+  padding: 12px 14px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-m);
   font-family: inherit;
+  font-size: 14px;
+  color: var(--c-text-2);
+  resize: vertical;
+  background: var(--c-surface);
+  transition: border-color 0.15s;
 }
+.description-editor textarea:focus { outline: none; border-color: var(--c-text-3); }
+.description-editor textarea::placeholder { color: var(--c-text-3); }
 
-.bank-alert {
+.btn-remove-desc {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #e0e7ff 0%, #dbeafe 100%);
-  border: 1px solid #a5b4fc;
-  border-radius: 12px;
-}
-
-.bank-alert > i { font-size: 1.5rem; color: #4338ca; }
-
-.bank-alert-content { flex: 1; }
-.bank-alert-content strong { display: block; color: #312e81; margin-bottom: 4px; }
-.bank-alert-content p { margin: 0; font-size: 0.875rem; color: #4338ca; }
-
-.btn-configure {
-  padding: 8px 16px;
-  border: 1px solid #4338ca;
-  border-radius: 8px;
-  background: white;
-  color: #4338ca;
-  font-weight: 500;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--c-text-3);
   cursor: pointer;
 }
+.btn-remove-desc:hover { background: var(--c-primary-soft); color: var(--c-text-1); }
 
-.btn-configure:hover { background: #4338ca; color: white; }
+/* Bank Notice */
+.bank-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--c-accent-soft);
+  border: 1px solid #c7d2fe;
+  border-radius: var(--radius-m);
+  font-size: 13px;
+  color: var(--c-accent);
+  margin-bottom: 16px;
+}
+.bank-notice strong { font-weight: 600; }
 
-.empty-questions {
+.btn-text {
+  border: none;
+  background: none;
+  color: var(--c-accent);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Empty State */
+.empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   padding: 80px 20px;
-  background: white;
-  border: 2px dashed #e5e7eb;
-  border-radius: 12px;
   text-align: center;
 }
+.empty-icon { color: var(--c-border); margin-bottom: 16px; }
+.empty-title { margin: 0 0 4px; font-size: 15px; font-weight: 500; color: var(--c-text-2); }
+.empty-subtitle { margin: 0; font-size: 13px; color: var(--c-text-3); }
 
-.empty-questions i { font-size: 3rem; color: #d1d5db; margin-bottom: 16px; }
-.empty-questions h3 { margin: 0 0 8px 0; color: #374151; }
-.empty-questions p { margin: 0; color: #6b7280; }
+/* Questions list */
+.questions-list { display: flex; flex-direction: column; gap: 12px; }
 
-.questions-list {
+.list-enter-active, .list-leave-active { transition: all 0.25s ease; }
+.list-enter-from { opacity: 0; transform: translateY(-12px); }
+.list-leave-to { opacity: 0; transform: translateX(12px); }
+.list-move { transition: transform 0.25s ease; }
+
+/* ══════════════════════════════════════
+   Bottom Bar
+   ══════════════════════════════════════ */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 90;
+  background: var(--c-surface);
+  border-top: 1px solid var(--c-border);
+  padding: 8px 20px;
+}
+
+.bottom-bar-inner {
+  max-width: 1320px;
+  margin: 0 auto;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stats-row {
+  display: flex;
   gap: 16px;
 }
 
-.list-enter-active, .list-leave-active { transition: all 0.3s ease; }
-.list-enter-from { opacity: 0; transform: translateY(-20px); }
-.list-leave-to { opacity: 0; transform: translateX(20px); }
-.list-move { transition: transform 0.3s ease; }
+.stat-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.stat-num { font-size: 16px; font-weight: 700; color: var(--c-text-1); }
+.stat-txt { font-size: 12px; color: var(--c-text-3); }
+.stat-chip.accent .stat-num { color: var(--c-accent); }
 
-/* Modal styles */
+.save-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--c-warning);
+}
+
+.slide-up-enter-active, .slide-up-leave-active { transition: all 0.25s ease; }
+.slide-up-enter-from, .slide-up-leave-to { opacity: 0; transform: translateY(100%); }
+
+/* ══════════════════════════════════════
+   Modal System
+   ══════════════════════════════════════ */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 20px;
+  backdrop-filter: blur(4px);
 }
 
-.modal-content {
-  background: white;
-  border-radius: 16px;
+.modal-panel {
+  background: #ffffff;
+  border-radius: var(--radius-l);
   width: 100%;
-  max-height: 90vh;
-  overflow: hidden;
+  max-height: 88vh;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.2);
+  border: 1px solid var(--c-border);
 }
 
-.settings-modal { max-width: 600px; }
-.preview-modal { max-width: 800px; }
-.unsaved-modal { max-width: 400px; }
+.settings-panel { max-width: 560px; }
+.preview-panel { max-width: 720px; }
+.unsaved-panel { max-width: 380px; }
 
-.modal-header {
+.modal-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--c-border);
+  flex-shrink: 0;
 }
-
-.modal-header h2 { margin: 0; font-size: 1.25rem; }
+.modal-top h2 { margin: 0; font-size: 16px; font-weight: 600; }
 
 .btn-close {
   width: 32px;
@@ -1073,118 +1367,169 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   background: transparent;
-  color: #6b7280;
+  color: var(--c-text-3);
   cursor: pointer;
 }
+.btn-close:hover { background: var(--c-primary-soft); color: var(--c-text-1); }
 
-.modal-body { padding: 24px; overflow-y: auto; }
+.modal-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--c-border);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.modal-tabs button {
+  padding: 10px 14px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--c-text-3);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.modal-tabs button:hover { color: var(--c-text-2); }
+.modal-tabs button.active {
+  color: var(--c-text-1);
+  border-bottom-color: var(--c-primary);
+}
 
-.modal-footer {
+.modal-scroll {
+  overflow-y: auto;
+  padding: 20px;
+  flex: 1;
+}
+
+.modal-bottom {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  padding: 16px 24px;
-  border-top: 1px solid #e5e7eb;
-  background: #f9fafb;
-}
-
-.btn-secondary {
-  padding: 10px 20px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: white;
-  color: #374151;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.btn-primary {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  background: #001845;
-  color: white;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-/* Settings tabs */
-.settings-tabs {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 24px;
-  padding: 4px;
-  background: #f3f4f6;
-  border-radius: 8px;
-}
-
-.settings-tabs button {
-  flex: 1;
-  padding: 10px 16px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: #6b7280;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.settings-tabs button.active {
-  background: white;
-  color: #111827;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.settings-content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.setting-group {
-  display: flex;
-  flex-direction: column;
   gap: 8px;
-}
-
-.setting-group > label:not(.setting-toggle) {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-}
-
-.setting-group input[type="text"],
-.setting-group input[type="number"],
-.setting-group input[type="datetime-local"],
-.setting-group textarea {
-  padding: 10px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-family: inherit;
-}
-
-.setting-toggle {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-}
-
-.setting-toggle input { display: none; }
-
-.toggle-slider {
-  width: 44px;
-  height: 24px;
-  background: #d1d5db;
-  border-radius: 12px;
-  position: relative;
-  transition: 0.2s;
+  padding: 12px 20px;
+  border-top: 1px solid var(--c-border);
   flex-shrink: 0;
 }
 
-.toggle-slider::after {
+.unsaved-body { padding: 20px; }
+.unsaved-body p { margin: 0; font-size: 14px; color: var(--c-text-2); }
+
+.btn-secondary {
+  padding: 8px 16px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-m);
+  background: var(--c-surface);
+  color: var(--c-text-2);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn-secondary:hover { border-color: var(--c-text-3); }
+
+.btn-primary {
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius-m);
+  background: var(--c-primary);
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn-primary:hover { opacity: 0.85; }
+
+/* Settings tabs content */
+.tab-content { display: flex; flex-direction: column; gap: 16px; }
+
+.tab-note {
+  font-size: 12px;
+  color: var(--c-text-3);
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--c-primary-soft);
+  border-radius: var(--radius-s);
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field-group > label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-text-2);
+}
+
+.field-group input[type="text"],
+.field-group input[type="number"],
+.field-group input[type="datetime-local"],
+.field-group textarea,
+.field-group select {
+  padding: 8px 12px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-m);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--c-text-1);
+  background: var(--c-surface);
+  transition: border-color 0.15s;
+}
+.field-group input:focus,
+.field-group textarea:focus,
+.field-group select:focus { outline: none; border-color: var(--c-text-3); }
+
+.input-with-suffix {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+}
+.input-with-suffix input {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  font-size: 14px;
+  color: var(--c-text-1);
+}
+.input-with-suffix input:focus { outline: none; }
+.input-with-suffix span {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--c-text-3);
+  background: var(--c-primary-soft);
+}
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.field-toggle { display: flex; flex-direction: column; gap: 4px; }
+.field-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c-text-1);
+}
+.field-toggle input { display: none; }
+
+.toggle-track {
+  width: 44px;
+  height: 24px;
+  background: #c5c9d0;
+  border-radius: 12px;
+  position: relative;
+  transition: background 0.25s ease;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+.toggle-track::after {
   content: '';
   position: absolute;
   width: 20px;
@@ -1193,229 +1538,204 @@ onBeforeUnmount(() => {
   border-radius: 50%;
   top: 2px;
   left: 2px;
-  transition: 0.2s;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
+.field-toggle input:checked + .toggle-track { background: #10b981; }
+.field-toggle input:checked + .toggle-track::after { transform: translateX(20px); }
 
-.setting-toggle input:checked + .toggle-slider { background: #001845; }
-.setting-toggle input:checked + .toggle-slider::after { left: 22px; }
+.divider { border: none; border-top: 1px solid var(--c-border-subtle); margin: 4px 0; }
 
-.toggle-label { font-weight: 500; color: #374151; }
-.setting-help { font-size: 0.75rem; color: #6b7280; margin: 0; }
-.setting-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.setting-divider { border: none; border-top: 1px solid #e5e7eb; margin: 8px 0; }
-
-/* Bank section */
+/* Bank section in settings */
 .bank-section {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  background: var(--c-accent-soft);
   padding: 16px;
-  border-radius: 12px;
-  border: 1px solid #bae6fd;
+  border-radius: var(--radius-m);
+  border: 1px solid #c7d2fe;
 }
 
-.bank-header {
+.bank-title {
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-accent);
   margin-bottom: 12px;
 }
 
-.bank-header i { font-size: 1.25rem; color: #0284c7; }
-.bank-header h4 { margin: 0; font-size: 0.95rem; font-weight: 600; color: #0c4a6e; }
-
 .bank-config {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px dashed #7dd3fc;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #c7d2fe;
 }
 
-.bank-stats {
+.bank-flow {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 16px;
-  padding: 16px;
+  padding: 14px;
   background: white;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
 }
 
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
+.bank-num { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.bank-value { font-size: 24px; font-weight: 700; color: var(--c-text-1); }
+.bank-label { font-size: 11px; color: var(--c-text-3); text-transform: uppercase; letter-spacing: 0.03em; }
+.bank-num.highlight .bank-label { color: var(--c-accent); font-weight: 600; }
+.bank-arrow { color: var(--c-text-3); }
 
-.stat-item .stat-value {
-  font-size: 1.75rem;
+.bank-input {
+  width: 64px;
+  font-size: 24px;
   font-weight: 700;
-  color: #1e3a5f;
-}
-
-.stat-input {
-  width: 80px;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #0284c7;
+  color: var(--c-accent);
   text-align: center;
-  border: 2px solid #7dd3fc;
-  border-radius: 8px;
-  padding: 4px 8px;
-  background: #f0f9ff;
+  border: 2px solid #c7d2fe;
+  border-radius: var(--radius-s);
+  padding: 4px;
+  background: transparent;
 }
+.bank-input:focus { outline: none; border-color: var(--c-accent); }
 
-.stat-input:focus {
-  outline: none;
-  border-color: #0284c7;
-}
-
-.stat-item .stat-label {
-  font-size: 0.75rem;
-  color: #64748b;
-  text-transform: uppercase;
-}
-
-.stat-item.highlight .stat-label { color: #0284c7; font-weight: 600; }
-.stat-arrow { color: #94a3b8; font-size: 1.25rem; }
-
-.bank-warning {
+.inline-warning {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-  padding: 10px 14px;
-  background: #fef3c7;
-  border: 1px solid #fbbf24;
-  border-radius: 8px;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: var(--c-warning-soft);
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-s);
   color: #92400e;
-  font-size: 0.875rem;
+  font-size: 13px;
 }
 
-.bank-warning i { color: #f59e0b; }
+/* Info box (Odoo) */
+.info-box {
+  padding: 14px 16px;
+  background: var(--c-accent-soft);
+  border: 1px solid #c7d2fe;
+  border-radius: var(--radius-m);
+}
+.info-box-title { font-size: 13px; font-weight: 600; color: var(--c-accent); margin-bottom: 8px; }
+.info-box ol { margin: 0; padding-left: 18px; font-size: 13px; color: var(--c-text-2); }
+.info-box li { margin-bottom: 4px; }
 
-.bank-info {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 12px;
+/* ══════════════════════════════════════
+   Preview
+   ══════════════════════════════════════ */
+.preview-scroll { background: var(--c-bg); }
+.preview-wrapper { max-width: 560px; margin: 0 auto; }
+
+.preview-bank-note {
   padding: 10px 14px;
-  background: #ecfdf5;
-  border: 1px solid #6ee7b7;
-  border-radius: 8px;
-  color: #065f46;
-  font-size: 0.875rem;
-}
-
-.bank-info i { color: #10b981; margin-top: 2px; }
-
-/* Preview */
-.preview-body { background: #f3f4f6; }
-.preview-container { max-width: 600px; margin: 0 auto; }
-
-.preview-bank-notice {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  background: #fef3c7;
-  border: 1px solid #fbbf24;
-  border-radius: 8px;
+  background: var(--c-warning-soft);
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-m);
   margin-bottom: 16px;
-  font-size: 0.875rem;
+  font-size: 13px;
   color: #92400e;
 }
-
-.preview-bank-notice i { color: #f59e0b; }
 
 .preview-form {
-  background: white;
-  border-radius: 12px;
-  padding: 32px;
+  background: var(--c-surface);
+  border-radius: var(--radius-l);
+  padding: 28px;
 }
+.preview-form h1 { margin: 0 0 6px; font-size: 20px; }
+.preview-desc { margin: 0 0 20px; color: var(--c-text-3); font-size: 14px; }
 
-.preview-form h1 { margin: 0 0 8px 0; font-size: 1.5rem; }
-.preview-form > p { margin: 0 0 24px 0; color: #6b7280; }
+.preview-q { padding: 16px 0; border-bottom: 1px solid var(--c-border-subtle); }
+.preview-q:last-child { border-bottom: none; }
 
-.preview-question {
-  padding: 20px 0;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.question-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.question-number {
-  background: #001845;
+.pq-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
+.pq-num {
+  width: 22px;
+  height: 22px;
+  background: var(--c-primary);
   color: white;
-  width: 24px;
-  height: 24px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 11px;
   font-weight: 600;
   flex-shrink: 0;
 }
+.pq-text { font-size: 14px; font-weight: 500; color: var(--c-text-1); }
+.pq-required { color: var(--c-danger); }
 
-.question-text { font-weight: 500; color: #111827; }
-.required-mark { color: #dc2626; }
-
-.question-preview-input input,
-.question-preview-input textarea,
-.question-preview-input select {
+.pq-input input, .pq-input textarea, .pq-input select {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #f9fafb;
+  padding: 8px 12px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-s);
+  background: var(--c-primary-soft);
+  font-size: 14px;
 }
+.pq-option { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 14px; }
 
-.radio-option, .checkbox-option {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 0;
-}
-
-/* Toast */
+/* ══════════════════════════════════════
+   Toast
+   ══════════════════════════════════════ */
 .toast {
   position: fixed;
-  bottom: 24px;
+  bottom: 60px;
   right: 24px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 20px;
-  background: #111827;
-  color: white;
-  border-radius: 8px;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: var(--radius-m);
+  font-size: 13px;
   font-weight: 500;
   z-index: 2000;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
 }
+.toast.success { background: #065f46; color: white; }
+.toast.error { background: #991b1b; color: white; }
 
-.toast.success { background: #059669; }
-.toast.error { background: #dc2626; }
+.toast-enter-active, .toast-leave-active { transition: all 0.25s ease; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(12px); }
 
-.toast-enter-active, .toast-leave-active { transition: all 0.3s ease; }
-.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(20px); }
+/* Modal transitions */
+.modal-enter-active, .modal-leave-active { transition: all 0.2s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+.modal-enter-from .modal-panel, .modal-leave-to .modal-panel { transform: scale(0.96) translateY(8px); }
 
-.fade-enter-active, .fade-leave-active { transition: all 0.3s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-10px); }
+.fade-enter-active, .fade-leave-active { transition: all 0.2s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 
+/* ══════════════════════════════════════
+   Responsive
+   ══════════════════════════════════════ */
 @media (max-width: 1024px) {
   .editor-body { grid-template-columns: 1fr; }
-  .question-types { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .editor-sidebar {
+    position: static;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--c-border);
+    padding: 12px 16px;
+  }
+  .question-types { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 4px; }
+  .editor-canvas { padding: 16px; max-width: 100%; }
 }
 
 @media (max-width: 640px) {
-  .editor-header { flex-direction: column; gap: 16px; }
-  .question-types { grid-template-columns: repeat(2, 1fr); }
-  .setting-row { grid-template-columns: 1fr; }
-  .bank-stats { flex-direction: column; gap: 12px; }
-  .stat-arrow { transform: rotate(90deg); }
+  .editor-header { padding: 10px 12px; gap: 8px; }
+  .header-divider { display: none; }
+  .type-toggle { order: 3; }
+  .header-left { flex-wrap: wrap; }
+  .title-input { font-size: 16px; order: 2; width: 100%; }
+  .context-bar-inner { flex-wrap: wrap; gap: 12px; }
+  .course-field { flex-basis: 100%; }
+  .field-row { grid-template-columns: 1fr; }
+  .bank-flow { flex-direction: column; gap: 8px; }
+  .bank-arrow { transform: rotate(90deg); }
+  .modal-tabs { padding: 0 12px; }
+  .modal-tabs button { padding: 8px 10px; font-size: 12px; }
 }
 </style>
