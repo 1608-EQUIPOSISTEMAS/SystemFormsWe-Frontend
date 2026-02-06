@@ -25,7 +25,6 @@ onMounted(async () => {
 
 async function publishToLinkedIn(code) {
   try {
-    // Recuperar datos guardados
     examData.value = JSON.parse(localStorage.getItem('linkedin_exam_data') || '{}')
     const postText = localStorage.getItem('linkedin_post_text') || ''
     const certificateImage = localStorage.getItem('linkedin_certificate_image')
@@ -58,54 +57,28 @@ async function publishToLinkedIn(code) {
       return
     }
     
-    // 2. Preparar imágenes
+    // 2. Preparar imágenes (score card)
     const images = []
-    
-    // Imagen del score (siempre)
     if (certificateImage) {
       images.push(certificateImage)
     }
     
-    // 3. ★ Convertir PDF a imagen si existe (usando certificate_id)
-    if (examData.value.certificateId) {
-      statusMessage.value = 'Convirtiendo certificado PDF...'
-      
-      try {
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 segundos
-        
-        const pdfResponse = await fetch(`${API_URL}/linkedin/pdf-to-image`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ certificate_id: examData.value.certificateId }),
-          signal: controller.signal
-        })
-        
-        clearTimeout(timeoutId)
-        
-        const pdfData = await pdfResponse.json()
-        
-        if (pdfData.ok && pdfData.data?.image_base64) {
-          images.push(pdfData.data.image_base64)
-          console.log('✅ PDF convertido a imagen')
-        }
-      } catch (err) {
-        console.warn('⚠️ No se pudo convertir el PDF:', err.message)
-        // Continuar sin el PDF
-      }
-    }
+    // 3. Publicar - usa post-with-document si hay certificado PDF
+    //    El backend sube el PDF como documento nativo de LinkedIn
+    //    Si falla, hace fallback automático a imágenes
+    statusMessage.value = examData.value.certificateId 
+      ? 'Subiendo certificado PDF...' 
+      : 'Publicando en LinkedIn...'
     
-    // 4. Publicar en LinkedIn
-    statusMessage.value = 'Publicando en LinkedIn...'
-    
-    const postResponse = await fetch(`${API_URL}/linkedin/post-with-images`, {
+    const postResponse = await fetch(`${API_URL}/linkedin/post-with-document`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         access_token: tokenData.data.access_token,
         user_id: tokenData.data.user.id,
         text: postText,
-        images: images
+        images: images,
+        certificate_id: examData.value.certificateId || null
       })
     })
     
@@ -113,7 +86,8 @@ async function publishToLinkedIn(code) {
     
     if (postData.ok) {
       status.value = 'success'
-      statusMessage.value = '¡Publicado exitosamente!'
+      const typeLabel = postData.data?.type === 'document' ? ' (con certificado PDF)' : ''
+      statusMessage.value = `¡Publicado exitosamente${typeLabel}!`
       linkedInPostUrl.value = 'https://www.linkedin.com/feed/'
     } else {
       status.value = 'error'
@@ -162,24 +136,21 @@ function goBack() {
       
       <!-- Success -->
       <template v-else-if="status === 'success'">
-        <div class="icon-success">✓</div>
-        <h2>¡Publicación exitosa!</h2>
-        <p>Tu certificado ha sido compartido en LinkedIn</p>
-        <div class="button-group">
-          <button @click="goToLinkedIn" class="btn btn-primary">
-            Ver en LinkedIn
-          </button>
+        <div class="success-icon">✅</div>
+        <h2>{{ statusMessage }}</h2>
+        <p class="text-muted">Tu publicación ya está en LinkedIn</p>
+        <div class="actions">
+          <button class="btn btn-primary" @click="goToLinkedIn">Ver en LinkedIn</button>
+          <button class="btn btn-secondary" @click="goBack">Volver</button>
         </div>
       </template>
       
       <!-- Error -->
       <template v-else>
-        <div class="icon-error">✕</div>
+        <div class="error-icon">❌</div>
         <h2>Error</h2>
         <p class="error-text">{{ errorMessage }}</p>
-        <button @click="goBack" class="btn btn-outline">
-          Volver
-        </button>
+        <button class="btn btn-secondary" @click="goBack">Volver</button>
       </template>
     </div>
   </div>
@@ -191,105 +162,42 @@ function goBack() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f5f5;
+  background: #f3f2ef;
   padding: 20px;
 }
-
 .callback-card {
   background: white;
-  border-radius: 16px;
-  padding: 48px;
+  border-radius: 12px;
+  padding: 40px;
   text-align: center;
-  max-width: 400px;
+  max-width: 420px;
   width: 100%;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
-
 .spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid #e5e5e5;
-  border-top-color: #0077b5;
+  width: 48px; height: 48px;
+  border: 4px solid #e0e0e0;
+  border-top-color: #0a66c2;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 24px;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 20px;
 }
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.icon-success {
-  width: 64px;
-  height: 64px;
-  background: #059669;
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
-  margin: 0 auto 24px;
-}
-
-.icon-error {
-  width: 64px;
-  height: 64px;
-  background: #dc2626;
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
-  margin: 0 auto 24px;
-}
-
-h2 {
-  margin-bottom: 8px;
-  color: #1a1a1a;
-}
-
-.text-muted {
-  color: #666;
-}
-
-.error-text {
-  color: #dc2626;
-}
-
-.button-group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 24px;
-}
-
+@keyframes spin { to { transform: rotate(360deg); } }
+.success-icon, .error-icon { font-size: 48px; margin-bottom: 16px; }
+.text-muted { color: #666; margin-top: 8px; }
+.error-text { color: #d32f2f; margin-top: 8px; }
+.actions { display: flex; gap: 12px; justify-content: center; margin-top: 24px; }
 .btn {
-  padding: 12px 24px;
-  border-radius: 8px;
+  padding: 10px 24px;
+  border-radius: 24px;
+  border: none;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  border: none;
-  font-size: 15px;
+  transition: all 0.2s;
 }
-
-.btn-primary {
-  background: #0077b5;
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #006097;
-}
-
-.btn-outline {
-  background: transparent;
-  border: 2px solid #ddd;
-  color: #333;
-}
-
-.btn-outline:hover {
-  background: #f5f5f5;
-}
+.btn-primary { background: #0a66c2; color: white; }
+.btn-primary:hover { background: #004182; }
+.btn-secondary { background: #e0e0e0; color: #333; }
+.btn-secondary:hover { background: #d0d0d0; }
 </style>

@@ -15,7 +15,6 @@
       </div>
       <h2>Error</h2>
       <p>{{ error }}</p>
-      <button @click="router.push('/')" class="btn-home">Volver al inicio</button>
     </div>
 
     <!-- Resultado -->
@@ -154,10 +153,6 @@
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
               Compartir en LinkedIn
             </button>
-            <button @click="goHome" class="action-btn home">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              Volver al inicio
-            </button>
           </div>
           <div class="sidebar-footer"><span>W|E Educación Ejecutiva</span></div>
         </div>
@@ -226,7 +221,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import QRCode from 'qrcode'
 import html2canvas from 'html2canvas'
@@ -265,17 +260,26 @@ function scrollToTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-function goHome() {
-  router.push('/')
-}
+// ═══════════════════════════════════════════════════════════════
+// QR - Se genera cuando el canvas existe en el DOM
+// ═══════════════════════════════════════════════════════════════
+watch(qrCanvas, async (canvas) => {
+  if (canvas && examResult.value?.odoo?.pdf_url) {
+    await generateQR()
+  }
+})
 
 async function generateQR() {
-  if (!examResult.value?.response_uuid || !qrCanvas.value) return
+  if (!qrCanvas.value || !examResult.value?.odoo?.pdf_url) return
   try {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
-    const qrUrl = `${API_URL}/public/certificate/${examResult.value.response_uuid}`
-    await QRCode.toCanvas(qrCanvas.value, qrUrl, { width: 120, margin: 2, color: { dark: '#000F5A', light: '#ffffff' } })
-  } catch (err) { console.error('QR error:', err) }
+    await QRCode.toCanvas(qrCanvas.value, examResult.value.odoo.pdf_url, {
+      width: 120,
+      margin: 2,
+      color: { dark: '#000F5A', light: '#ffffff' }
+    })
+  } catch (err) {
+    console.error('QR error:', err)
+  }
 }
 
 function downloadTicket() {
@@ -288,7 +292,9 @@ function downloadTicket() {
   setTimeout(() => { w.print() }, 300)
 }
 
+// ═══════════════════════════════════════════════════════════════
 // LinkedIn Functions
+// ═══════════════════════════════════════════════════════════════
 function generateDefaultLinkedInText() {
   const r = examResult.value
   const timestamp = new Date().toLocaleString('es-PE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -386,6 +392,9 @@ async function generateCertificateImage() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// Cargar resultado
+// ═══════════════════════════════════════════════════════════════
 async function loadResult() {
   const uuid = route.params.uuid
   if (!uuid) { error.value = 'UUID no válido'; loading.value = false; return }
@@ -398,8 +407,6 @@ async function loadResult() {
     if (!data.ok) throw new Error(data.error || 'Error al cargar resultado')
     
     examResult.value = data.data
-    await nextTick()
-    generateQR()
   } catch (e) {
     error.value = e.message
   } finally {
